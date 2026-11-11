@@ -19,7 +19,7 @@ export default function RichLessonContent({ content }: RichLessonContentProps) {
   const blocks = content.split(/\n\s*\n/);
 
   return (
-    <article className="space-y-5 text-slate-800 leading-relaxed font-sans text-sm sm:text-base selection:bg-indigo-100">
+    <article className="space-y-5 text-slate-800 dark:text-slate-200 leading-relaxed font-sans text-sm sm:text-base selection:bg-indigo-100 dark:selection:bg-indigo-900">
       {blocks.map((block, idx) => {
         const trimmed = block.trim();
 
@@ -29,18 +29,18 @@ export default function RichLessonContent({ content }: RichLessonContentProps) {
           const altText = imgMatch[1];
           const imgUrl = imgMatch[2];
           return (
-            <figure key={idx} className="my-6 rounded-2xl overflow-hidden border border-slate-200 bg-slate-50 shadow-sm transition-all hover:shadow-md">
+            <figure key={idx} className="my-6 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 shadow-sm transition-all hover:shadow-md">
               <img
                 src={imgUrl}
                 alt={altText || 'Imagen del capítulo'}
                 loading="lazy"
-                className="w-full max-h-[520px] object-contain bg-slate-900/5 mx-auto"
+                className="w-full max-h-[520px] object-contain bg-slate-900/5 dark:bg-black/20 mx-auto"
                 onError={(e) => {
                   (e.target as HTMLElement).style.display = 'none';
                 }}
               />
               {altText && (
-                <figcaption className="p-3 text-center text-xs text-slate-500 italic bg-white border-t border-slate-100 flex items-center justify-center gap-1.5">
+                <figcaption className="p-3 text-center text-xs text-slate-500 dark:text-slate-400 italic bg-white dark:bg-slate-800/90 border-t border-slate-100 dark:border-slate-700 flex items-center justify-center gap-1.5">
                   <ImageIcon className="w-3.5 h-3.5 text-indigo-400" />
                   <span>{altText}</span>
                 </figcaption>
@@ -52,12 +52,12 @@ export default function RichLessonContent({ content }: RichLessonContentProps) {
         // 2. Direct standalone image URL: http(s)://...(.png|.jpg|.jpeg|.webp|.gif|.svg)
         if (/^https?:\/\/.*\.(png|jpg|jpeg|webp|gif|svg)(\?.*)?$/i.test(trimmed)) {
           return (
-            <figure key={idx} className="my-6 rounded-2xl overflow-hidden border border-slate-200 bg-slate-50 shadow-sm">
+            <figure key={idx} className="my-6 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 shadow-sm">
               <img
                 src={trimmed}
                 alt="Imagen de referencia"
                 loading="lazy"
-                className="w-full max-h-[520px] object-contain bg-slate-900/5 mx-auto"
+                className="w-full max-h-[520px] object-contain bg-slate-900/5 dark:bg-black/20 mx-auto"
               />
             </figure>
           );
@@ -86,14 +86,14 @@ export default function RichLessonContent({ content }: RichLessonContentProps) {
         // 4. Headings: #, ##, ###
         if (trimmed.startsWith('# ')) {
           return (
-            <h1 key={idx} className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-8 mb-4 border-b border-slate-200 pb-2.5">
+            <h1 key={idx} className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight mt-8 mb-4 border-b border-slate-200 dark:border-slate-700 pb-2.5">
               {trimmed.substring(2)}
             </h1>
           );
         }
         if (trimmed.startsWith('## ')) {
           return (
-            <h2 key={idx} className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight mt-6 mb-3 flex items-center gap-2">
+            <h2 key={idx} className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight mt-6 mb-3 flex items-center gap-2">
               <span className="w-1.5 h-5 bg-indigo-600 rounded-full inline-block"></span>
               <span>{trimmed.substring(3)}</span>
             </h2>
@@ -101,7 +101,7 @@ export default function RichLessonContent({ content }: RichLessonContentProps) {
         }
         if (trimmed.startsWith('### ')) {
           return (
-            <h3 key={idx} className="text-base sm:text-lg font-bold text-slate-900 mt-5 mb-2">
+            <h3 key={idx} className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mt-5 mb-2">
               {trimmed.substring(4)}
             </h3>
           );
@@ -111,9 +111,9 @@ export default function RichLessonContent({ content }: RichLessonContentProps) {
         if (trimmed.startsWith('>')) {
           const quoteLines = trimmed.split('\n').map(l => l.replace(/^>\s?/, '')).join('\n');
           return (
-            <div key={idx} className="my-4 p-4 sm:p-5 rounded-2xl bg-indigo-50/90 border-l-4 border-indigo-600 text-slate-800 shadow-xs flex gap-3.5">
-              <Info className="w-5 h-5 text-indigo-600 flex-shrink-0 mt-0.5" />
-              <div className="text-sm sm:text-base leading-relaxed whitespace-pre-line font-medium text-slate-800">
+            <div key={idx} className="my-4 p-4 sm:p-5 rounded-2xl bg-indigo-50/90 dark:bg-indigo-950/40 border-l-4 border-indigo-600 text-slate-800 dark:text-slate-200 shadow-xs flex gap-3.5">
+              <Info className="w-5 h-5 text-indigo-600 dark:text-indigo-400 flex-shrink-0 mt-0.5" />
+              <div className="text-sm sm:text-base leading-relaxed whitespace-pre-line font-medium text-slate-800 dark:text-slate-200">
                 {renderInlineFormatting(quoteLines)}
               </div>
             </div>
@@ -126,7 +126,7 @@ export default function RichLessonContent({ content }: RichLessonContentProps) {
           return (
             <ul key={idx} className="my-4 space-y-2.5 pl-2 sm:pl-4">
               {items.map((item, itemIdx) => (
-                <li key={itemIdx} className="flex items-start gap-2.5 text-slate-800 text-sm sm:text-base">
+                <li key={itemIdx} className="flex items-start gap-2.5 text-slate-800 dark:text-slate-200 text-sm sm:text-base">
                   <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 flex-shrink-0 mt-2.5"></span>
                   <span className="leading-relaxed">{renderInlineFormatting(item)}</span>
                 </li>
@@ -137,7 +137,7 @@ export default function RichLessonContent({ content }: RichLessonContentProps) {
 
         // 7. Standard Paragraph with inline formatting
         return (
-          <p key={idx} className="leading-relaxed text-slate-800 text-sm sm:text-base whitespace-pre-line">
+          <p key={idx} className="leading-relaxed text-slate-800 dark:text-slate-200 text-sm sm:text-base whitespace-pre-line">
             {renderInlineFormatting(trimmed)}
           </p>
         );
@@ -155,17 +155,17 @@ function renderInlineFormatting(text: string): React.ReactNode {
 
   return parts.map((part, i) => {
     if (part.startsWith('**') && part.endsWith('**') && part.length >= 4) {
-      return <strong key={i} className="font-bold text-slate-900">{part.slice(2, -2)}</strong>;
+      return <strong key={i} className="font-bold text-slate-900 dark:text-white">{part.slice(2, -2)}</strong>;
     }
     if (part.startsWith('`') && part.endsWith('`') && part.length >= 2) {
       return (
-        <code key={i} className="px-1.5 py-0.5 rounded bg-slate-100 text-indigo-700 font-mono text-[11px] sm:text-xs border border-slate-200">
+        <code key={i} className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-indigo-700 dark:text-indigo-300 font-mono text-[11px] sm:text-xs border border-slate-200 dark:border-slate-700">
           {part.slice(1, -1)}
         </code>
       );
     }
     if (part.startsWith('*') && part.endsWith('*') && part.length >= 2) {
-      return <em key={i} className="italic text-slate-800">{part.slice(1, -1)}</em>;
+      return <em key={i} className="italic text-slate-800 dark:text-slate-200">{part.slice(1, -1)}</em>;
     }
     return part;
   });

@@ -190,7 +190,7 @@ export default function CourseViewer({
   }, [activeLesson, hasVideo]);
 
   return (
-    <div className="bg-slate-50 min-h-screen">
+    <div className="bg-slate-50 dark:bg-slate-900 min-h-screen transition-colors duration-200">
       {!isCoursePublished && (
         <div className="bg-amber-500 text-white text-xs font-semibold px-4 py-2 text-center flex items-center justify-center gap-2 shadow-xs">
           <Sparkles className="w-3.5 h-3.5 text-amber-100 flex-shrink-0" />
@@ -199,38 +199,38 @@ export default function CourseViewer({
       )}
 
       {/* Subheader Toolbar */}
-      <div className="bg-white border-b border-slate-200">
+      <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 transition-colors">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
           <button
             id="back-to-catalog-toolbar-btn"
             onClick={onBackToCatalog}
-            className="inline-flex items-center gap-1.5 text-xs text-slate-600 hover:text-slate-900 font-semibold focus:outline-none py-1.5 px-3 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-semibold focus:outline-none py-1.5 px-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Volver al Catálogo</span>
           </button>
 
           <div className="flex items-center gap-3">
-            <span className="text-slate-400 text-xs hidden sm:block">Progreso:</span>
+            <span className="text-slate-400 dark:text-slate-500 text-xs hidden sm:block">Progreso:</span>
             <div className="flex items-center gap-2">
-              <div className="w-24 sm:w-36 bg-slate-100 rounded-full h-2 overflow-hidden border border-slate-200">
+              <div className="w-24 sm:w-36 bg-slate-100 dark:bg-slate-800 rounded-full h-2 overflow-hidden border border-slate-200 dark:border-slate-700">
                 <div 
-                  className="bg-blue-600 h-full rounded-full transition-all duration-300"
+                  className="bg-blue-600 dark:bg-blue-500 h-full rounded-full transition-all duration-300"
                   style={{ width: `${progressPercent}%` }}
                 ></div>
               </div>
-              <span className="text-xs font-bold text-slate-800">{progressPercent}%</span>
+              <span className="text-xs font-bold text-slate-800 dark:text-slate-200">{progressPercent}%</span>
             </div>
 
             {isFinished && isDiplomaEnabled && !isCoursePublished && (
-              <span className="inline-flex items-center gap-1.5 bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-bold px-2.5 py-1 rounded-lg">
-                <Sparkles className="w-3 h-3 text-amber-600" />
+              <span className="inline-flex items-center gap-1.5 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 text-[10px] font-bold px-2.5 py-1 rounded-lg">
+                <Sparkles className="w-3 h-3 text-amber-600 dark:text-amber-400" />
                 <span>Diploma disponible al publicarse</span>
               </span>
             )}
 
             {isFinished && !isDiplomaEnabled && (
-              <span className="inline-flex items-center gap-1.5 bg-slate-100 text-slate-600 border border-slate-200 text-[10px] font-semibold px-2.5 py-1 rounded-lg">
+              <span className="inline-flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 text-[10px] font-semibold px-2.5 py-1 rounded-lg">
                 <span>Curso sin emisión de diploma</span>
               </span>
             )}
@@ -278,17 +278,17 @@ export default function CourseViewer({
                 </div>
 
                 {/* Video Lesson Title & Action */}
-                <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs">
+                <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-xs transition-colors">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-[10px] bg-indigo-50 text-indigo-700 font-bold px-2.5 py-0.5 rounded-full uppercase flex items-center gap-1">
+                        <span className="text-[10px] bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-bold px-2.5 py-0.5 rounded-full uppercase flex items-center gap-1">
                           <Video className="w-3 h-3" />
                           <span>Video Lección · Clase {currentLessonIndex + 1}</span>
                         </span>
-                        <span className="text-[11px] text-slate-400 font-mono">{activeLesson?.duration}</span>
+                        <span className="text-[11px] text-slate-400 dark:text-slate-500 font-mono">{activeLesson?.duration}</span>
                       </div>
-                      <h1 className="font-bold text-slate-900 text-lg sm:text-xl leading-snug">
+                      <h1 className="font-bold text-slate-900 dark:text-white text-lg sm:text-xl leading-snug">
                         {activeLesson ? activeLesson.title : 'Cargando contenido...'}
                       </h1>
                     </div>
@@ -297,9 +297,9 @@ export default function CourseViewer({
                       <button
                         id="toggle-lesson-completed-btn"
                         onClick={() => onToggleLessonCompleted(course.id, activeLesson.id)}
-                        className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm ${
+                        className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer ${
                           isCompleted
-                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-300 hover:bg-emerald-100'
+                            ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 hover:bg-emerald-100 dark:hover:bg-emerald-900/60'
                             : 'bg-blue-600 hover:bg-blue-700 text-white'
                         }`}
                       >
@@ -312,9 +312,9 @@ export default function CourseViewer({
                   </div>
 
                   {activeLesson?.content && (
-                    <div className="mt-6 pt-6 border-t border-slate-100">
-                      <h3 className="text-xs sm:text-sm font-extrabold text-slate-800 uppercase tracking-wider mb-4 flex items-center gap-2">
-                        <FileText className="w-4.5 h-4.5 text-blue-600" />
+                    <div className="mt-6 pt-6 border-t border-slate-100 dark:border-slate-800">
+                      <h3 className="text-xs sm:text-sm font-extrabold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-4 flex items-center gap-2">
+                        <FileText className="w-4.5 h-4.5 text-blue-600 dark:text-blue-400" />
                         <span>Apuntes y Notas de la Clase</span>
                       </h3>
                       <RichLessonContent content={activeLesson.content} />
@@ -324,23 +324,23 @@ export default function CourseViewer({
               </div>
             ) : (
               /* ================== E-BOOK / DIGITAL READING CHAPTER MODE ================== */
-              <div className="bg-white rounded-3xl p-6 sm:p-10 border border-slate-200 shadow-sm space-y-6">
+              <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-10 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6 transition-colors">
                 
                 {/* Chapter Header Banner */}
-                <div className="border-b border-slate-150 pb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="border-b border-slate-200/80 dark:border-slate-800 pb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="space-y-2">
                     <div className="flex flex-wrap items-center gap-2.5">
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200 shadow-2xs">
-                        <BookOpen className="w-3.5 h-3.5 text-blue-600" />
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/60 shadow-2xs">
+                        <BookOpen className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                         <span>Capítulo {currentLessonIndex + 1} de {course.lessons.length}</span>
                       </span>
-                      <span className="text-xs sm:text-sm text-slate-700 font-semibold flex items-center gap-1.5">
-                        <Clock className="w-4 h-4 text-slate-500" />
+                      <span className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 font-semibold flex items-center gap-1.5">
+                        <Clock className="w-4 h-4 text-slate-500 dark:text-slate-400" />
                         <span>{activeLesson?.duration || '8 min de lectura'}</span>
                       </span>
                     </div>
 
-                    <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight leading-tight">
+                    <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight">
                       {activeLesson ? activeLesson.title : 'Cargando capítulo...'}
                     </h1>
                   </div>
@@ -352,8 +352,8 @@ export default function CourseViewer({
                       onClick={() => onToggleLessonCompleted(course.id, activeLesson.id)}
                       className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-sm flex-shrink-0 cursor-pointer ${
                         isCompleted
-                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-300 hover:bg-emerald-100'
-                          : 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-100'
+                          ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 hover:bg-emerald-100 dark:hover:bg-emerald-900/60'
+                          : 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-100 dark:shadow-none'
                       }`}
                     >
                       <CheckCircle2 className="w-4 h-4" />
@@ -370,7 +370,7 @@ export default function CourseViewer({
                 </div>
 
                 {/* Bottom chapter reading navigation */}
-                <div className="pt-6 border-t border-slate-150 flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-50/70 p-4 rounded-2xl">
+                <div className="pt-6 border-t border-slate-200/80 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-50/70 dark:bg-slate-800/50 p-4 rounded-2xl">
                   <div>
                     {prevLesson ? (
                       <button
@@ -378,7 +378,7 @@ export default function CourseViewer({
                           setActiveLesson(prevLesson);
                           window.scrollTo({ top: 0, behavior: 'smooth' });
                         }}
-                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 hover:bg-white hover:shadow-xs border border-transparent hover:border-slate-200 transition-all cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800 hover:shadow-xs border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition-all cursor-pointer"
                       >
                         <ChevronLeft className="w-4 h-4" />
                         <span>Capítulo Anterior</span>
@@ -416,15 +416,15 @@ export default function CourseViewer({
             )}
 
             {/* Tabs for extra interaction (Student notes, QA list) */}
-            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-2xs">
-              <div className="border-b border-slate-150 flex bg-slate-50/50">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-2xs transition-colors">
+              <div className="border-b border-slate-200/80 dark:border-slate-800 flex bg-slate-50/50 dark:bg-slate-800/40">
                 <button
                   id="tab-learner-notes"
                   onClick={() => setActiveTab('notes')}
                   className={`flex-1 py-3.5 text-xs sm:text-sm font-bold transition-colors cursor-pointer ${
                     activeTab === 'notes'
-                      ? 'border-b-2 border-indigo-600 text-indigo-700 bg-white'
-                      : 'text-slate-600 hover:text-slate-900'
+                      ? 'border-b-2 border-indigo-600 text-indigo-700 dark:text-indigo-400 bg-white dark:bg-slate-900'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
                   <span className="flex items-center justify-center gap-1.5">
@@ -437,8 +437,8 @@ export default function CourseViewer({
                   onClick={() => setActiveTab('faq')}
                   className={`flex-1 py-3.5 text-xs sm:text-sm font-bold transition-colors cursor-pointer ${
                     activeTab === 'faq'
-                      ? 'border-b-2 border-indigo-600 text-indigo-700 bg-white'
-                      : 'text-slate-600 hover:text-slate-900'
+                      ? 'border-b-2 border-indigo-600 text-indigo-700 dark:text-indigo-400 bg-white dark:bg-slate-900'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
                   <span className="flex items-center justify-center gap-1.5">
@@ -451,7 +451,7 @@ export default function CourseViewer({
               <div className="p-6">
                 {activeTab === 'notes' && (
                   <div className="space-y-4">
-                    <p className="text-slate-700 text-xs sm:text-sm leading-relaxed font-normal">
+                    <p className="text-slate-700 dark:text-slate-300 text-xs sm:text-sm leading-relaxed font-normal">
                       Usa este campo para guardar recordatorios rápidos, comandos importantes o fragmentos de código. Se guardan para siempre en tu navegador asociados a tu cuenta.
                     </p>
 
@@ -462,7 +462,7 @@ export default function CourseViewer({
                         value={customNoteInput}
                         onChange={(e) => setCustomNoteInput(e.target.value)}
                         placeholder="Añadir una nota rápida de esta lección..."
-                        className="flex-1 px-3.5 py-2.5 border border-slate-200 rounded-xl bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-indigo-600 text-xs sm:text-sm"
+                        className="flex-1 px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-indigo-600 dark:focus:ring-indigo-500 text-xs sm:text-sm"
                       />
                       <button
                         id="save-note-submit-btn"
@@ -474,7 +474,7 @@ export default function CourseViewer({
                     </form>
 
                     {savedNotes.length === 0 ? (
-                      <div className="py-6 text-center text-slate-500 text-xs sm:text-sm border border-dashed border-slate-200 rounded-xl font-medium">
+                      <div className="py-6 text-center text-slate-500 dark:text-slate-400 text-xs sm:text-sm border border-dashed border-slate-200 dark:border-slate-800 rounded-xl font-medium">
                         Aún no tienes notas escritas para este curso. ¡Escribe una arriba!
                       </div>
                     ) : (
@@ -485,11 +485,11 @@ export default function CourseViewer({
 
                           if (isEditing) {
                             return (
-                              <div key={index} className="bg-indigo-50/70 p-3.5 rounded-xl border border-indigo-200 space-y-2.5">
+                              <div key={index} className="bg-indigo-50/70 dark:bg-indigo-950/40 p-3.5 rounded-xl border border-indigo-200 dark:border-indigo-800/80 space-y-2.5">
                                 <textarea
                                   value={editingNoteText}
                                   onChange={(e) => setEditingNoteText(e.target.value)}
-                                  className="w-full p-2.5 border border-slate-300 rounded-lg text-xs sm:text-sm text-slate-900 bg-white focus:ring-1 focus:ring-indigo-600 focus:outline-none font-medium leading-relaxed"
+                                  className="w-full p-2.5 border border-slate-300 dark:border-slate-700 rounded-lg text-xs sm:text-sm text-slate-900 dark:text-white bg-white dark:bg-slate-800 focus:ring-1 focus:ring-indigo-600 dark:focus:ring-indigo-500 focus:outline-none font-medium leading-relaxed"
                                   rows={2}
                                   autoFocus
                                 />
@@ -500,7 +500,7 @@ export default function CourseViewer({
                                       setEditingNoteIndex(null);
                                       setEditingNoteText('');
                                     }}
-                                    className="px-3 py-1.5 text-xs font-semibold text-slate-700 hover:text-slate-900 bg-white border border-slate-300 rounded-lg flex items-center gap-1 cursor-pointer"
+                                    className="px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg flex items-center gap-1 cursor-pointer"
                                   >
                                     <X className="w-3.5 h-3.5" />
                                     <span>Cancelar</span>
@@ -520,15 +520,15 @@ export default function CourseViewer({
 
                           if (isConfirmingDelete) {
                             return (
-                              <div key={index} className="bg-rose-50 p-3.5 rounded-xl border border-rose-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                                <p className="text-xs sm:text-sm font-semibold text-rose-900">
+                              <div key={index} className="bg-rose-50 dark:bg-rose-950/40 p-3.5 rounded-xl border border-rose-200 dark:border-rose-800/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                                <p className="text-xs sm:text-sm font-semibold text-rose-900 dark:text-rose-200">
                                   ¿Estás seguro de que deseas eliminar este apunte?
                                 </p>
                                 <div className="flex items-center gap-2">
                                   <button
                                     type="button"
                                     onClick={() => setDeletingNoteIndex(null)}
-                                    className="px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-200 bg-white border border-slate-300 rounded-lg cursor-pointer"
+                                    className="px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg cursor-pointer"
                                   >
                                     Cancelar
                                   </button>
@@ -545,15 +545,15 @@ export default function CourseViewer({
                           }
 
                           return (
-                            <div key={index} className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 flex justify-between items-start gap-4 hover:border-slate-300 transition-colors">
-                              <span className="text-xs sm:text-sm text-slate-800 leading-relaxed font-medium break-words whitespace-pre-wrap flex-1">{note}</span>
+                            <div key={index} className="bg-slate-50 dark:bg-slate-800/60 p-3.5 rounded-xl border border-slate-200 dark:border-slate-700/80 flex justify-between items-start gap-4 hover:border-slate-300 dark:hover:border-slate-600 transition-colors">
+                              <span className="text-xs sm:text-sm text-slate-800 dark:text-slate-200 leading-relaxed font-medium break-words whitespace-pre-wrap flex-1">{note}</span>
                               <div className="flex items-center gap-1 flex-shrink-0 pt-0.5">
                                 <button
                                   id={`edit-note-idx-${index}`}
                                   type="button"
                                   onClick={() => handleStartEditNote(index, note)}
                                   title="Editar apunte"
-                                  className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
+                                  className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 rounded-lg transition-colors cursor-pointer"
                                 >
                                   <Pencil className="w-4 h-4" />
                                 </button>
@@ -565,7 +565,7 @@ export default function CourseViewer({
                                     setEditingNoteIndex(null);
                                   }}
                                   title="Eliminar apunte"
-                                  className="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                                  className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/60 rounded-lg transition-colors cursor-pointer"
                                 >
                                   <Trash2 className="w-4 h-4" />
                                 </button>
@@ -580,18 +580,18 @@ export default function CourseViewer({
 
                 {activeTab === 'faq' && (
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between mb-2 pb-2 border-b border-slate-150">
-                      <span className="text-xs font-extrabold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                        <HelpCircle className="w-4 h-4 text-indigo-600" />
+                    <div className="flex items-center justify-between mb-2 pb-2 border-b border-slate-200/80 dark:border-slate-800">
+                      <span className="text-xs font-extrabold text-slate-800 dark:text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
+                        <HelpCircle className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                         <span>Preguntas Frecuentes del Curso</span>
                       </span>
-                      <span className="text-[11px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-150 px-2.5 py-0.5 rounded-full">
+                      <span className="text-[11px] font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-150 dark:border-indigo-900/60 px-2.5 py-0.5 rounded-full">
                         {effectiveFaqs.length} resoluciones
                       </span>
                     </div>
 
                     {effectiveFaqs.length === 0 ? (
-                      <div className="p-6 text-center text-slate-500 text-xs sm:text-sm border border-dashed border-slate-200 rounded-xl font-medium">
+                      <div className="p-6 text-center text-slate-500 dark:text-slate-400 text-xs sm:text-sm border border-dashed border-slate-200 dark:border-slate-800 rounded-xl font-medium">
                         No hay preguntas frecuentes registradas para este curso por el momento.
                       </div>
                     ) : (
@@ -604,8 +604,8 @@ export default function CourseViewer({
                               key={faq.id}
                               className={`border rounded-xl transition-all overflow-hidden ${
                                 isOpen
-                                  ? 'border-indigo-300 bg-indigo-50/20 shadow-2xs'
-                                  : 'border-slate-200 bg-white hover:border-slate-300'
+                                  ? 'border-indigo-300 dark:border-indigo-700 bg-indigo-50/20 dark:bg-indigo-950/30 shadow-2xs'
+                                  : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 hover:border-slate-300 dark:hover:border-slate-700'
                               }`}
                             >
                               <button
@@ -614,21 +614,21 @@ export default function CourseViewer({
                                 onClick={() => toggleFaqAccordion(faq.id)}
                                 className="w-full text-left p-3.5 flex items-center justify-between gap-3 focus:outline-none cursor-pointer"
                               >
-                                <span className="font-bold text-slate-900 text-xs sm:text-sm leading-snug flex items-center gap-2.5">
-                                  <span className="w-6 h-6 rounded-lg bg-indigo-100 text-indigo-800 text-xs font-black flex items-center justify-center flex-shrink-0">
+                                <span className="font-bold text-slate-900 dark:text-white text-xs sm:text-sm leading-snug flex items-center gap-2.5">
+                                  <span className="w-6 h-6 rounded-lg bg-indigo-100 dark:bg-indigo-900/80 text-indigo-800 dark:text-indigo-200 text-xs font-black flex items-center justify-center flex-shrink-0">
                                     ?
                                   </span>
                                   <span>{faq.question}</span>
                                 </span>
                                 {isOpen ? (
-                                  <ChevronUp className="w-4 h-4 text-indigo-600 flex-shrink-0" />
+                                  <ChevronUp className="w-4 h-4 text-indigo-600 dark:text-indigo-400 flex-shrink-0" />
                                 ) : (
-                                  <ChevronDown className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                                  <ChevronDown className="w-4 h-4 text-slate-400 dark:text-slate-500 flex-shrink-0" />
                                 )}
                               </button>
 
                               {isOpen && (
-                                <div className="px-4 pb-4 pt-1 text-slate-800 text-xs sm:text-sm leading-relaxed border-t border-indigo-150/60 bg-white/80 font-normal">
+                                <div className="px-4 pb-4 pt-1 text-slate-800 dark:text-slate-200 text-xs sm:text-sm leading-relaxed border-t border-indigo-150/60 dark:border-indigo-900/50 bg-white/80 dark:bg-slate-900/80 font-normal">
                                   {faq.answer}
                                 </div>
                               )}
@@ -647,13 +647,13 @@ export default function CourseViewer({
           {/* Sidebar Area: Curriculum lessons index */}
           <div className="space-y-6">
             
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-              <div className="bg-slate-50 p-4 border-b border-slate-200">
-                <span className="text-xs text-indigo-700 font-extrabold uppercase tracking-wider">Plan de Estudios</span>
-                <h2 className="font-extrabold text-slate-900 text-sm sm:text-base mt-0.5">Lecciones del Curso</h2>
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden transition-colors">
+              <div className="bg-slate-50 dark:bg-slate-800/60 p-4 border-b border-slate-200 dark:border-slate-800">
+                <span className="text-xs text-indigo-700 dark:text-indigo-400 font-extrabold uppercase tracking-wider">Plan de Estudios</span>
+                <h2 className="font-extrabold text-slate-900 dark:text-white text-sm sm:text-base mt-0.5">Lecciones del Curso</h2>
               </div>
 
-              <div className="divide-y divide-slate-150 max-h-[480px] overflow-y-auto">
+              <div className="divide-y divide-slate-150 dark:divide-slate-800 max-h-[480px] overflow-y-auto">
                 {course.lessons.map((lesson, idx) => {
                   const isCompleted = completedLessonIds.includes(lesson.id);
                   const isActive = activeLesson?.id === lesson.id;
@@ -665,8 +665,8 @@ export default function CourseViewer({
                       onClick={() => setActiveLesson(lesson)}
                       className={`p-4 flex items-start gap-3 cursor-pointer transition-colors ${
                         isActive
-                          ? 'bg-indigo-50/50 border-l-4 border-indigo-600 pl-3.5'
-                          : 'hover:bg-slate-50 bg-white'
+                          ? 'bg-indigo-50/50 dark:bg-indigo-950/40 border-l-4 border-indigo-600 pl-3.5'
+                          : 'hover:bg-slate-50 dark:hover:bg-slate-800/60 bg-white dark:bg-slate-900'
                       }`}
                     >
                       {/* Check icon */}
@@ -676,12 +676,12 @@ export default function CourseViewer({
                           e.stopPropagation();
                           onToggleLessonCompleted(course.id, lesson.id);
                         }}
-                        className="mt-0.5 text-slate-400 hover:text-indigo-600 focus:outline-none flex-shrink-0 cursor-pointer"
+                        className="mt-0.5 text-slate-400 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 focus:outline-none flex-shrink-0 cursor-pointer"
                       >
                         {isCompleted ? (
-                          <CheckCircle2 className="w-5 h-5 text-emerald-500 fill-emerald-50" />
+                          <CheckCircle2 className="w-5 h-5 text-emerald-500 fill-emerald-50 dark:fill-emerald-950/40" />
                         ) : (
-                          <Circle className="w-5 h-5 text-slate-300" />
+                          <Circle className="w-5 h-5 text-slate-300 dark:text-slate-600" />
                         )}
                       </button>
 
@@ -689,20 +689,20 @@ export default function CourseViewer({
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5 mb-0.5">
                           {lesson.videoUrl && lesson.videoUrl.trim() !== '' ? (
-                            <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 font-bold">
+                            <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-bold">
                               <Video className="w-3 h-3" /> Video
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 font-bold">
+                            <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-bold">
                               <BookOpen className="w-3 h-3" /> Lectura
                             </span>
                           )}
-                          <span className="text-xs text-slate-500 font-mono font-medium">
+                          <span className="text-xs text-slate-500 dark:text-slate-400 font-mono font-medium">
                             {lesson.duration || (lesson.videoUrl ? '10 min' : '5 min')}
                           </span>
                         </div>
                         <p className={`text-xs sm:text-sm font-semibold leading-snug ${
-                          isActive ? 'text-indigo-900 font-extrabold' : 'text-slate-800'
+                          isActive ? 'text-indigo-900 dark:text-indigo-300 font-extrabold' : 'text-slate-800 dark:text-slate-200'
                         } truncate`}>
                           {lesson.title}
                         </p>
@@ -713,26 +713,26 @@ export default function CourseViewer({
               </div>
 
               {/* Progress visual footer */}
-              <div className="bg-slate-50 p-4 border-t border-slate-200 text-center">
-                <p className="text-xs sm:text-sm text-slate-700 font-medium">
-                  Completadas: <strong className="text-slate-900 font-extrabold">{completedCount}</strong> de {totalLessons} lecciones
+              <div className="bg-slate-50 dark:bg-slate-800/60 p-4 border-t border-slate-200 dark:border-slate-800 text-center">
+                <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 font-medium">
+                  Completadas: <strong className="text-slate-900 dark:text-white font-extrabold">{completedCount}</strong> de {totalLessons} lecciones
                 </p>
               </div>
             </div>
 
             {/* Instructor Card info */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs">
-              <span className="text-xs text-indigo-700 uppercase font-extrabold tracking-wider">Tu Instructor</span>
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-xs transition-colors">
+              <span className="text-xs text-indigo-700 dark:text-indigo-400 uppercase font-extrabold tracking-wider">Tu Instructor</span>
               <div className="flex items-center gap-3 mt-3">
-                <div className="w-11 h-11 rounded-full bg-indigo-50 text-indigo-700 flex items-center justify-center font-extrabold text-base border border-indigo-150 shadow-2xs">
+                <div className="w-11 h-11 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 flex items-center justify-center font-extrabold text-base border border-indigo-150 dark:border-indigo-900 shadow-2xs">
                   {course.instructor.charAt(0)}
                 </div>
                 <div className="min-w-0">
-                  <p className="text-sm font-extrabold text-slate-900 truncate">{course.instructor}</p>
-                  <p className="text-xs font-semibold text-slate-700">Asesor Técnico</p>
+                  <p className="text-sm font-extrabold text-slate-900 dark:text-white truncate">{course.instructor}</p>
+                  <p className="text-xs font-semibold text-slate-700 dark:text-slate-400">Asesor Técnico</p>
                 </div>
               </div>
-              <p className="text-xs sm:text-sm text-slate-800 font-normal mt-3 leading-relaxed">
+              <p className="text-xs sm:text-sm text-slate-800 dark:text-slate-300 font-normal mt-3 leading-relaxed">
                 Mentor asignado para evaluar el progreso virtual de tu código y certificar de manera digital la finalización de los objetivos.
               </p>
             </div>
@@ -744,11 +744,11 @@ export default function CourseViewer({
 
       {/* Diploma certificate modal layout */}
       {showCertificateModal && canClaimCertificate && (
-        <div className="fixed inset-0 bg-slate-900/75 backdrop-blur-xs z-50 flex justify-center items-center p-4 overflow-y-auto" id="certificate-viewer-modal">
-          <div className="bg-white rounded-2xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl relative border border-slate-300 space-y-6">
+        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-xs z-50 flex justify-center items-center p-4 overflow-y-auto" id="certificate-viewer-modal">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl relative border border-slate-300 dark:border-slate-700 space-y-6 transition-colors">
             
             {/* Real printable digital certificate artwork */}
-            <div className="border-[8px] border-double border-indigo-900 p-6 sm:p-10 text-center relative bg-stone-50 rounded-lg shadow-inner overflow-hidden" id="certificate-print-area">
+            <div className="border-[8px] border-double border-indigo-900 p-6 sm:p-10 text-center relative bg-stone-50 text-slate-900 rounded-lg shadow-inner overflow-hidden" id="certificate-print-area">
               
               {/* Background elegant pattern watermark */}
               <div className="absolute inset-0 pointer-events-none opacity-5 flex items-center justify-center">
@@ -817,7 +817,7 @@ export default function CourseViewer({
                 id="close-certificate-modal-btn"
                 type="button"
                 onClick={() => setShowCertificateModal(false)}
-                className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs sm:text-sm transition-all cursor-pointer"
+                className="px-5 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded-xl text-xs sm:text-sm transition-all cursor-pointer"
               >
                 Cerrar documento
               </button>
