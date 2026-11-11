@@ -257,23 +257,30 @@ export default function CourseViewer({
             {hasVideo ? (
               /* ================== VIDEO LESSON MODE ================== */
               <div className="space-y-6">
-                <div className="bg-black rounded-2xl overflow-hidden aspect-video relative group shadow-lg" id="classroom-player-wrapper">
-                  {activeLesson ? (
-                    <video
-                      ref={videoRef}
-                      src={activeLesson.videoUrl}
-                      controls
-                      className="w-full h-full object-contain"
-                      poster="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1200&auto=format&fit=crop&q=80"
-                    >
-                      Tu navegador no soporta reproducción de vídeo HTML5.
-                    </video>
-                  ) : (
-                    <div className="absolute inset-0 flex flex-col justify-center items-center text-white p-6 text-center">
-                      <Play className="h-10 w-10 text-slate-400 animate-pulse mb-3" />
-                      <p className="font-bold">Selecciona una lección para comenzar</p>
-                    </div>
-                  )}
+                <div className="relative group">
+                  {/* Static subtle and elegant ambient neon gradient background blur */}
+                  <div 
+                    className="absolute -inset-1.5 bg-gradient-to-r from-purple-600 via-indigo-600 to-fuchsia-500 rounded-2xl blur-xl opacity-0 dark:opacity-20 pointer-events-none"
+                  />
+
+                  <div className="bg-black rounded-2xl overflow-hidden aspect-video relative shadow-lg dark:shadow-[0_0_20px_rgba(168,85,247,0.15)] border border-transparent dark:border-purple-500/30 transition-all duration-300" id="classroom-player-wrapper">
+                    {activeLesson ? (
+                      <video
+                        ref={videoRef}
+                        src={activeLesson.videoUrl}
+                        controls
+                        className="w-full h-full object-contain"
+                        poster="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1200&auto=format&fit=crop&q=80"
+                      >
+                        Tu navegador no soporta reproducción de vídeo HTML5.
+                      </video>
+                    ) : (
+                      <div className="absolute inset-0 flex flex-col justify-center items-center text-white p-6 text-center">
+                        <Play className="h-10 w-10 text-slate-400 animate-pulse mb-3" />
+                        <p className="font-bold">Selecciona una lección para comenzar</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Video Lesson Title & Action */}

@@ -18,7 +18,7 @@ export default function ThemeToggle({ className = '' }: ThemeToggleProps) {
       onClick={toggleTheme}
       aria-label={isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
       title={isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
-      className={`relative p-2 rounded-full transition-all duration-200 cursor-pointer flex items-center justify-center text-slate-600 hover:text-indigo-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:text-amber-400 dark:hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 active:scale-95 ${className}`}
+      className={`relative p-2 rounded-full transition-all duration-200 cursor-pointer flex items-center justify-center text-slate-600 hover:text-indigo-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:text-amber-400 dark:hover:bg-slate-800/80 outline-none focus:outline-none focus:ring-0 focus-visible:outline-none active:outline-none select-none [webkit-tap-highlight-color:transparent] active:scale-95 ${className}`}
     >
       <AnimatePresence mode="wait" initial={false}>
         {isDark ? (
