@@ -197,13 +197,6 @@ export default function App() {
             message: `¡Enhorabuena! Has completado todas las clases de "${course?.title || 'tu curso'}". Ya puedes emitir y descargar tu Diploma de Acreditación.`,
             courseId
           });
-        } else {
-          addNotification(userEmail, {
-            type: 'lesson',
-            title: '¡Clase completada!',
-            message: `Completaste satisfactoriamente "${lessonTitle}". ¡Continúa avanzando!`,
-            courseId
-          });
         }
       }
     }

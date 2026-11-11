@@ -172,10 +172,9 @@ export default function CourseViewer({
 
   const handleMarkAndNext = () => {
     if (activeLesson) {
-      if (!completedLessonIds.includes(activeLesson.id)) {
-        onToggleLessonCompleted(course.id, activeLesson.id);
-      }
-      if (nextLesson) {
+      const wasCompleted = completedLessonIds.includes(activeLesson.id);
+      onToggleLessonCompleted(course.id, activeLesson.id);
+      if (!wasCompleted && nextLesson) {
         setActiveLesson(nextLesson);
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
@@ -250,10 +249,10 @@ export default function CourseViewer({
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
           
-          {/* Main Area: Reader or Player & Tabs */}
-          <div className="lg:col-span-2 space-y-6">
+          {/* Order 1: Main Player or Ebook Reader */}
+          <div className="lg:col-span-2 space-y-6 order-1">
             
             {hasVideo ? (
               /* ================== VIDEO LESSON MODE ================== */
@@ -296,7 +295,7 @@ export default function CourseViewer({
                     {activeLesson && (
                       <button
                         id="toggle-lesson-completed-btn"
-                        onClick={() => onToggleLessonCompleted(course.id, activeLesson.id)}
+                        onClick={handleMarkAndNext}
                         className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer ${
                           isCompleted
                             ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 hover:bg-emerald-100 dark:hover:bg-emerald-900/60'
@@ -349,7 +348,7 @@ export default function CourseViewer({
                   {activeLesson && (
                     <button
                       id="toggle-lesson-completed-btn"
-                      onClick={() => onToggleLessonCompleted(course.id, activeLesson.id)}
+                      onClick={handleMarkAndNext}
                       className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-sm flex-shrink-0 cursor-pointer ${
                         isCompleted
                           ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 hover:bg-emerald-100 dark:hover:bg-emerald-900/60'
@@ -414,8 +413,86 @@ export default function CourseViewer({
 
               </div>
             )}
+          </div>
 
-            {/* Tabs for extra interaction (Student notes, QA list) */}
+          {/* Order 2: Plan de Estudios / Lecciones del Curso */}
+          <div className="order-2 lg:col-span-1 space-y-6">
+            <div className="bg-white dark:bg-slate-700/80 rounded-2xl border border-slate-200 dark:border-slate-600 shadow-xs overflow-hidden transition-colors">
+              <div className="bg-slate-50 dark:bg-slate-800/80 p-4 border-b border-slate-200 dark:border-slate-600">
+                <span className="text-xs text-indigo-700 dark:text-indigo-400 font-extrabold uppercase tracking-wider">Plan de Estudios</span>
+                <h2 className="font-extrabold text-slate-900 dark:text-white text-sm sm:text-base mt-0.5">Lecciones del Curso</h2>
+              </div>
+
+              <div className="divide-y divide-slate-150 dark:divide-slate-600/80 max-h-[480px] overflow-y-auto">
+                {course.lessons.map((lesson, idx) => {
+                  const isCompleted = completedLessonIds.includes(lesson.id);
+                  const isActive = activeLesson?.id === lesson.id;
+
+                  return (
+                    <div
+                      key={lesson.id}
+                      id={`lesson-row-${lesson.id}`}
+                      onClick={() => setActiveLesson(lesson)}
+                      className={`p-4 flex items-start gap-3 cursor-pointer transition-colors ${
+                        isActive
+                          ? 'bg-indigo-50/50 dark:bg-indigo-950/60 border-l-4 border-indigo-600 pl-3.5'
+                          : 'hover:bg-slate-50 dark:hover:bg-slate-600/80 bg-white dark:bg-slate-700'
+                      }`}
+                    >
+                      {/* Check icon */}
+                      <button
+                        id={`btn-toggle-compl-${lesson.id}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onToggleLessonCompleted(course.id, lesson.id);
+                        }}
+                        className="mt-0.5 text-slate-400 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 focus:outline-none flex-shrink-0 cursor-pointer"
+                      >
+                        {isCompleted ? (
+                          <CheckCircle2 className="w-5 h-5 text-emerald-500 fill-emerald-50 dark:fill-emerald-950/40" />
+                        ) : (
+                          <Circle className="w-5 h-5 text-slate-300 dark:text-slate-600" />
+                        )}
+                      </button>
+
+                      {/* Info lesson */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5 mb-0.5">
+                          {lesson.videoUrl && lesson.videoUrl.trim() !== '' ? (
+                            <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-bold">
+                              <Video className="w-3 h-3" /> Video
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-bold">
+                              <BookOpen className="w-3 h-3" /> Lectura
+                            </span>
+                          )}
+                          <span className="text-xs text-slate-500 dark:text-slate-400 font-mono font-medium">
+                            {lesson.duration || (lesson.videoUrl ? '10 min' : '5 min')}
+                          </span>
+                        </div>
+                        <p className={`text-xs sm:text-sm font-semibold leading-snug ${
+                          isActive ? 'text-indigo-900 dark:text-indigo-300 font-extrabold' : 'text-slate-800 dark:text-slate-200'
+                        } truncate`}>
+                          {lesson.title}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Progress visual footer */}
+              <div className="bg-slate-50 dark:bg-slate-800/80 p-4 border-t border-slate-200 dark:border-slate-600 text-center">
+                <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 font-medium">
+                  Completadas: <strong className="text-slate-900 dark:text-white font-extrabold">{completedCount}</strong> de {totalLessons} lecciones
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Order 3: Tabs for extra interaction (Apuntes Locales & FAQs) */}
+          <div className="order-3 lg:col-span-2 space-y-6">
             <div className="bg-white dark:bg-slate-700/80 rounded-2xl border border-slate-200 dark:border-slate-600 overflow-hidden shadow-2xs transition-colors">
               <div className="border-b border-slate-200/80 dark:border-slate-800 flex bg-slate-50/50 dark:bg-slate-800/40">
                 <button
@@ -641,86 +718,10 @@ export default function CourseViewer({
                 )}
               </div>
             </div>
-
           </div>
 
-          {/* Sidebar Area: Curriculum lessons index */}
-          <div className="space-y-6">
-            
-            <div className="bg-white dark:bg-slate-700/80 rounded-2xl border border-slate-200 dark:border-slate-600 shadow-xs overflow-hidden transition-colors">
-              <div className="bg-slate-50 dark:bg-slate-800/80 p-4 border-b border-slate-200 dark:border-slate-600">
-                <span className="text-xs text-indigo-700 dark:text-indigo-400 font-extrabold uppercase tracking-wider">Plan de Estudios</span>
-                <h2 className="font-extrabold text-slate-900 dark:text-white text-sm sm:text-base mt-0.5">Lecciones del Curso</h2>
-              </div>
-
-              <div className="divide-y divide-slate-150 dark:divide-slate-600/80 max-h-[480px] overflow-y-auto">
-                {course.lessons.map((lesson, idx) => {
-                  const isCompleted = completedLessonIds.includes(lesson.id);
-                  const isActive = activeLesson?.id === lesson.id;
-
-                  return (
-                    <div
-                      key={lesson.id}
-                      id={`lesson-row-${lesson.id}`}
-                      onClick={() => setActiveLesson(lesson)}
-                      className={`p-4 flex items-start gap-3 cursor-pointer transition-colors ${
-                        isActive
-                          ? 'bg-indigo-50/50 dark:bg-indigo-950/60 border-l-4 border-indigo-600 pl-3.5'
-                          : 'hover:bg-slate-50 dark:hover:bg-slate-600/80 bg-white dark:bg-slate-700'
-                      }`}
-                    >
-                      {/* Check icon */}
-                      <button
-                        id={`btn-toggle-compl-${lesson.id}`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onToggleLessonCompleted(course.id, lesson.id);
-                        }}
-                        className="mt-0.5 text-slate-400 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 focus:outline-none flex-shrink-0 cursor-pointer"
-                      >
-                        {isCompleted ? (
-                          <CheckCircle2 className="w-5 h-5 text-emerald-500 fill-emerald-50 dark:fill-emerald-950/40" />
-                        ) : (
-                          <Circle className="w-5 h-5 text-slate-300 dark:text-slate-600" />
-                        )}
-                      </button>
-
-                      {/* Info lesson */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5 mb-0.5">
-                          {lesson.videoUrl && lesson.videoUrl.trim() !== '' ? (
-                            <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-bold">
-                              <Video className="w-3 h-3" /> Video
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-bold">
-                              <BookOpen className="w-3 h-3" /> Lectura
-                            </span>
-                          )}
-                          <span className="text-xs text-slate-500 dark:text-slate-400 font-mono font-medium">
-                            {lesson.duration || (lesson.videoUrl ? '10 min' : '5 min')}
-                          </span>
-                        </div>
-                        <p className={`text-xs sm:text-sm font-semibold leading-snug ${
-                          isActive ? 'text-indigo-900 dark:text-indigo-300 font-extrabold' : 'text-slate-800 dark:text-slate-200'
-                        } truncate`}>
-                          {lesson.title}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Progress visual footer */}
-              <div className="bg-slate-50 dark:bg-slate-800/80 p-4 border-t border-slate-200 dark:border-slate-600 text-center">
-                <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 font-medium">
-                  Completadas: <strong className="text-slate-900 dark:text-white font-extrabold">{completedCount}</strong> de {totalLessons} lecciones
-                </p>
-              </div>
-            </div>
-
-            {/* Instructor Card info */}
+          {/* Order 4: Tu Instructor Card */}
+          <div className="order-4 lg:col-span-1 space-y-6">
             <div className="bg-white dark:bg-slate-700/80 rounded-2xl border border-slate-200 dark:border-slate-600 p-5 shadow-xs transition-colors">
               <span className="text-xs text-indigo-700 dark:text-indigo-400 uppercase font-extrabold tracking-wider">Tu Instructor</span>
               <div className="flex items-center gap-3 mt-3">
@@ -736,7 +737,6 @@ export default function CourseViewer({
                 Mentor asignado para evaluar el progreso virtual de tu código y certificar de manera digital la finalización de los objetivos.
               </p>
             </div>
-
           </div>
 
         </div>
