@@ -139,7 +139,7 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col justify-center py-12 px-6 lg:px-8 transition-colors">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-800 flex flex-col justify-center py-12 px-6 lg:px-8 transition-colors">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center items-center gap-2 mb-2">
           <div className="bg-indigo-600 text-white p-2 rounded-xl shadow-md shadow-indigo-100 dark:shadow-none">

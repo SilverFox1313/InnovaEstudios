@@ -36,7 +36,7 @@ export default function AdminView({
 
   if (!isAuthorized) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center p-6 text-center transition-colors">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-800 flex flex-col items-center justify-center p-6 text-center transition-colors">
         <div className="bg-white dark:bg-slate-900 border border-rose-100 dark:border-rose-950/60 p-8 rounded-2xl max-w-md shadow-sm space-y-4">
           <div className="w-12 h-12 bg-rose-50 dark:bg-rose-950/50 text-rose-650 dark:text-rose-400 rounded-xl flex items-center justify-center mx-auto">
             <Award className="w-6 h-6 text-rose-500" />
@@ -386,7 +386,7 @@ export default function AdminView({
   };
 
   return (
-    <div className="bg-slate-50 dark:bg-slate-950 min-h-screen py-8 transition-colors">
+    <div className="bg-slate-50 dark:bg-slate-800 min-h-screen py-8 transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Header toolbar */}

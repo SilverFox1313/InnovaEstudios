@@ -190,7 +190,7 @@ export default function CourseViewer({
   }, [activeLesson, hasVideo]);
 
   return (
-    <div className="bg-slate-50 dark:bg-slate-900 min-h-screen transition-colors duration-200">
+    <div className="bg-slate-50 dark:bg-slate-800 min-h-screen transition-colors duration-200">
       {!isCoursePublished && (
         <div className="bg-amber-500 text-white text-xs font-semibold px-4 py-2 text-center flex items-center justify-center gap-2 shadow-xs">
           <Sparkles className="w-3.5 h-3.5 text-amber-100 flex-shrink-0" />
@@ -199,7 +199,7 @@ export default function CourseViewer({
       )}
 
       {/* Subheader Toolbar */}
-      <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 transition-colors">
+      <div className="bg-white dark:bg-slate-700/90 border-b border-slate-200 dark:border-slate-600 transition-colors">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
           <button
             id="back-to-catalog-toolbar-btn"
@@ -278,7 +278,7 @@ export default function CourseViewer({
                 </div>
 
                 {/* Video Lesson Title & Action */}
-                <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-xs transition-colors">
+                <div className="bg-white dark:bg-slate-700/80 rounded-2xl p-6 border border-slate-200 dark:border-slate-600 shadow-xs transition-colors">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                       <div className="flex items-center gap-2 mb-1">
@@ -324,7 +324,7 @@ export default function CourseViewer({
               </div>
             ) : (
               /* ================== E-BOOK / DIGITAL READING CHAPTER MODE ================== */
-              <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-10 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6 transition-colors">
+              <div className="bg-white dark:bg-slate-700/80 rounded-3xl p-6 sm:p-10 border border-slate-200 dark:border-slate-600 shadow-sm space-y-6 transition-colors">
                 
                 {/* Chapter Header Banner */}
                 <div className="border-b border-slate-200/80 dark:border-slate-800 pb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -416,7 +416,7 @@ export default function CourseViewer({
             )}
 
             {/* Tabs for extra interaction (Student notes, QA list) */}
-            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-2xs transition-colors">
+            <div className="bg-white dark:bg-slate-700/80 rounded-2xl border border-slate-200 dark:border-slate-600 overflow-hidden shadow-2xs transition-colors">
               <div className="border-b border-slate-200/80 dark:border-slate-800 flex bg-slate-50/50 dark:bg-slate-800/40">
                 <button
                   id="tab-learner-notes"
@@ -585,13 +585,13 @@ export default function CourseViewer({
                         <HelpCircle className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                         <span>Preguntas Frecuentes del Curso</span>
                       </span>
-                      <span className="text-[11px] font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-150 dark:border-indigo-900/60 px-2.5 py-0.5 rounded-full">
+                      <span className="text-[11px] font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/80 border border-indigo-150 dark:border-indigo-800/80 px-2.5 py-0.5 rounded-full">
                         {effectiveFaqs.length} resoluciones
                       </span>
                     </div>
 
                     {effectiveFaqs.length === 0 ? (
-                      <div className="p-6 text-center text-slate-500 dark:text-slate-400 text-xs sm:text-sm border border-dashed border-slate-200 dark:border-slate-800 rounded-xl font-medium">
+                      <div className="p-6 text-center text-slate-500 dark:text-slate-300 text-xs sm:text-sm border border-dashed border-slate-200 dark:border-slate-700 rounded-xl font-medium">
                         No hay preguntas frecuentes registradas para este curso por el momento.
                       </div>
                     ) : (
@@ -604,8 +604,8 @@ export default function CourseViewer({
                               key={faq.id}
                               className={`border rounded-xl transition-all overflow-hidden ${
                                 isOpen
-                                  ? 'border-indigo-300 dark:border-indigo-700 bg-indigo-50/20 dark:bg-indigo-950/30 shadow-2xs'
-                                  : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 hover:border-slate-300 dark:hover:border-slate-700'
+                                  ? 'border-indigo-400 dark:border-indigo-500 bg-indigo-50/40 dark:bg-slate-800 shadow-2xs'
+                                  : 'border-slate-200 dark:border-slate-600/80 bg-white dark:bg-slate-800/90 hover:border-slate-300 dark:hover:border-slate-500'
                               }`}
                             >
                               <button
@@ -614,21 +614,21 @@ export default function CourseViewer({
                                 onClick={() => toggleFaqAccordion(faq.id)}
                                 className="w-full text-left p-3.5 flex items-center justify-between gap-3 focus:outline-none cursor-pointer"
                               >
-                                <span className="font-bold text-slate-900 dark:text-white text-xs sm:text-sm leading-snug flex items-center gap-2.5">
-                                  <span className="w-6 h-6 rounded-lg bg-indigo-100 dark:bg-indigo-900/80 text-indigo-800 dark:text-indigo-200 text-xs font-black flex items-center justify-center flex-shrink-0">
+                                <span className="font-bold text-slate-900 dark:text-slate-100 text-xs sm:text-sm leading-snug flex items-center gap-2.5">
+                                  <span className="w-6 h-6 rounded-lg bg-indigo-100 dark:bg-indigo-950/80 text-indigo-800 dark:text-indigo-200 text-xs font-black flex items-center justify-center flex-shrink-0 border border-indigo-200/60 dark:border-indigo-800">
                                     ?
                                   </span>
                                   <span>{faq.question}</span>
                                 </span>
                                 {isOpen ? (
-                                  <ChevronUp className="w-4 h-4 text-indigo-600 dark:text-indigo-400 flex-shrink-0" />
+                                  <ChevronUp className="w-4 h-4 text-indigo-600 dark:text-indigo-300 flex-shrink-0" />
                                 ) : (
-                                  <ChevronDown className="w-4 h-4 text-slate-400 dark:text-slate-500 flex-shrink-0" />
+                                  <ChevronDown className="w-4 h-4 text-slate-400 dark:text-slate-300 flex-shrink-0" />
                                 )}
                               </button>
 
                               {isOpen && (
-                                <div className="px-4 pb-4 pt-1 text-slate-800 dark:text-slate-200 text-xs sm:text-sm leading-relaxed border-t border-indigo-150/60 dark:border-indigo-900/50 bg-white/80 dark:bg-slate-900/80 font-normal">
+                                <div className="px-4 pb-4 pt-2 text-slate-700 dark:text-slate-200 text-xs sm:text-sm leading-relaxed border-t border-indigo-150/60 dark:border-slate-700/80 bg-white/90 dark:bg-slate-800/95 font-normal">
                                   {faq.answer}
                                 </div>
                               )}
@@ -647,13 +647,13 @@ export default function CourseViewer({
           {/* Sidebar Area: Curriculum lessons index */}
           <div className="space-y-6">
             
-            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden transition-colors">
-              <div className="bg-slate-50 dark:bg-slate-800/60 p-4 border-b border-slate-200 dark:border-slate-800">
+            <div className="bg-white dark:bg-slate-700/80 rounded-2xl border border-slate-200 dark:border-slate-600 shadow-xs overflow-hidden transition-colors">
+              <div className="bg-slate-50 dark:bg-slate-800/80 p-4 border-b border-slate-200 dark:border-slate-600">
                 <span className="text-xs text-indigo-700 dark:text-indigo-400 font-extrabold uppercase tracking-wider">Plan de Estudios</span>
                 <h2 className="font-extrabold text-slate-900 dark:text-white text-sm sm:text-base mt-0.5">Lecciones del Curso</h2>
               </div>
 
-              <div className="divide-y divide-slate-150 dark:divide-slate-800 max-h-[480px] overflow-y-auto">
+              <div className="divide-y divide-slate-150 dark:divide-slate-600/80 max-h-[480px] overflow-y-auto">
                 {course.lessons.map((lesson, idx) => {
                   const isCompleted = completedLessonIds.includes(lesson.id);
                   const isActive = activeLesson?.id === lesson.id;
@@ -665,8 +665,8 @@ export default function CourseViewer({
                       onClick={() => setActiveLesson(lesson)}
                       className={`p-4 flex items-start gap-3 cursor-pointer transition-colors ${
                         isActive
-                          ? 'bg-indigo-50/50 dark:bg-indigo-950/40 border-l-4 border-indigo-600 pl-3.5'
-                          : 'hover:bg-slate-50 dark:hover:bg-slate-800/60 bg-white dark:bg-slate-900'
+                          ? 'bg-indigo-50/50 dark:bg-indigo-950/60 border-l-4 border-indigo-600 pl-3.5'
+                          : 'hover:bg-slate-50 dark:hover:bg-slate-600/80 bg-white dark:bg-slate-700'
                       }`}
                     >
                       {/* Check icon */}
@@ -713,7 +713,7 @@ export default function CourseViewer({
               </div>
 
               {/* Progress visual footer */}
-              <div className="bg-slate-50 dark:bg-slate-800/60 p-4 border-t border-slate-200 dark:border-slate-800 text-center">
+              <div className="bg-slate-50 dark:bg-slate-800/80 p-4 border-t border-slate-200 dark:border-slate-600 text-center">
                 <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 font-medium">
                   Completadas: <strong className="text-slate-900 dark:text-white font-extrabold">{completedCount}</strong> de {totalLessons} lecciones
                 </p>
@@ -721,7 +721,7 @@ export default function CourseViewer({
             </div>
 
             {/* Instructor Card info */}
-            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-xs transition-colors">
+            <div className="bg-white dark:bg-slate-700/80 rounded-2xl border border-slate-200 dark:border-slate-600 p-5 shadow-xs transition-colors">
               <span className="text-xs text-indigo-700 dark:text-indigo-400 uppercase font-extrabold tracking-wider">Tu Instructor</span>
               <div className="flex items-center gap-3 mt-3">
                 <div className="w-11 h-11 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 flex items-center justify-center font-extrabold text-base border border-indigo-150 dark:border-indigo-900 shadow-2xs">

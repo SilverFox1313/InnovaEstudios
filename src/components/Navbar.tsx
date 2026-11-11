@@ -135,7 +135,7 @@ export default function Navbar({
 
   return (
     <>
-      <header className="sticky top-0 z-40 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200/60 dark:border-slate-800/80 shadow-2xs transition-colors duration-200" id="main-navigation-header">
+      <header className="sticky top-0 z-40 bg-white/90 dark:bg-slate-800/95 backdrop-blur-md border-b border-slate-200/60 dark:border-slate-700/80 shadow-2xs transition-colors duration-200" id="main-navigation-header">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
             
