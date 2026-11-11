@@ -1,0 +1,6 @@
+{
+  "name": "Plataforma de Cursos",
+  "description": "Una plataforma interactiva para explorar, comprar y ver cursos online con reproductor de vídeo simulado y panel de usuario.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
