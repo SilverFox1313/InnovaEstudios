@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { Course, Lesson, CourseFaq } from '../types';
 import { Plus, BookOpen, Video, ArrowLeft, Image, DollarSign, Tag, Award, CheckCircle2, User, Sparkles, Trash2, Pencil, X, Database, Copy, Check, Eye, Edit3, FileText, HelpCircle, Clock, Star } from 'lucide-react';
 import { isSessionVerifiedAdmin } from '../services/auth';
@@ -55,6 +55,11 @@ export default function AdminView({
       </div>
     );
   }
+
+  // Form refs for smooth scrolling and auto-focusing on edit
+  const courseFormRef = useRef<HTMLDivElement>(null);
+  const lessonFormRef = useRef<HTMLDivElement>(null);
+  const faqFormRef = useRef<HTMLDivElement>(null);
 
   // Course form state
   const [editingCourseId, setEditingCourseId] = useState<string | null>(null);
@@ -140,6 +145,16 @@ export default function AdminView({
     setEditingFaqId(faq.id);
     setFaqQuestion(faq.question);
     setFaqAnswer(faq.answer);
+
+    // Auto-scroll to FAQ edit form and focus question input
+    setTimeout(() => {
+      faqFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      const qInput = document.getElementById('faq-question-input') as HTMLInputElement | null;
+      if (qInput) {
+        qInput.focus();
+        qInput.select();
+      }
+    }, 60);
   };
 
   const handleCancelEditFaq = () => {
@@ -257,6 +272,16 @@ export default function AdminView({
     setImageUrl(course.imageUrl);
     setStatus(course.status || 'published');
     setHasDiploma(course.hasDiploma !== false);
+
+    // Auto-scroll directly to the course edit form and focus title input
+    setTimeout(() => {
+      courseFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      const titleInput = document.getElementById('course-title') as HTMLInputElement | null;
+      if (titleInput) {
+        titleInput.focus();
+        titleInput.select();
+      }
+    }, 60);
   };
 
   const handleCancelEditCourse = () => {
@@ -327,6 +352,16 @@ export default function AdminView({
     setLessonVideoUrl(lesson.videoUrl || '');
     setLessonContent(lesson.content || '');
     setLessonContentTab('write');
+
+    // Auto-scroll directly to the lesson edit form and focus lesson title input
+    setTimeout(() => {
+      lessonFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      const titleInput = document.getElementById('lesson-title') as HTMLInputElement | null;
+      if (titleInput) {
+        titleInput.focus();
+        titleInput.select();
+      }
+    }, 60);
   };
 
   const handleCancelEditLesson = () => {
@@ -387,7 +422,12 @@ export default function AdminView({
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           
           {/* Panel 1: Create/Edit courses */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-6">
+          <div
+            ref={courseFormRef}
+            className={`bg-white rounded-2xl border p-6 shadow-sm space-y-6 scroll-mt-6 transition-all duration-300 ${
+              editingCourseId ? 'border-indigo-400 ring-2 ring-indigo-500/20' : 'border-slate-200'
+            }`}
+          >
             <div className="flex justify-between items-start">
               <div>
                 <span className="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg inline-block mb-2">
@@ -736,7 +776,12 @@ export default function AdminView({
           <div className="space-y-8">
             
             {/* Adding/Editing Lessons directly */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-6">
+            <div
+              ref={lessonFormRef}
+              className={`bg-white rounded-2xl border p-6 shadow-sm space-y-6 scroll-mt-6 transition-all duration-300 ${
+                editingLessonId ? 'border-blue-400 ring-2 ring-blue-500/20' : 'border-slate-200'
+              }`}
+            >
               <div>
                 <span className="p-1.5 bg-blue-50 text-blue-600 rounded-lg inline-block mb-2">
                   <BookOpen className="w-5 h-5 text-blue-600" />
@@ -982,7 +1027,12 @@ export default function AdminView({
             </div>
 
             {/* Panel 3: Manage Course Frequently Asked Questions (FAQs) */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-6">
+            <div
+              ref={faqFormRef}
+              className={`bg-white rounded-2xl border p-6 shadow-sm space-y-6 scroll-mt-6 transition-all duration-300 ${
+                editingFaqId ? 'border-purple-400 ring-2 ring-purple-500/20' : 'border-slate-200'
+              }`}
+            >
               <div>
                 <span className="p-1.5 bg-purple-50 text-purple-600 rounded-lg inline-block mb-2">
                   <HelpCircle className="w-5 h-5 text-purple-600" />

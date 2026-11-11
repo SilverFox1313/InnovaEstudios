@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { supabase } from '../supabaseClient';
+import NotificationDropdown from './NotificationDropdown';
 
 interface NavbarProps {
   userEmail: string;
@@ -31,6 +32,7 @@ interface NavbarProps {
   onGoToLearning?: () => void;
   onGoToAdmin?: () => void;
   showAdminBtn?: boolean;
+  onNavigateToCourse?: (courseId: string) => void;
 }
 
 export default function Navbar({
@@ -43,7 +45,8 @@ export default function Navbar({
   onGoHome,
   onGoToLearning,
   onGoToAdmin,
-  showAdminBtn = false
+  showAdminBtn = false,
+  onNavigateToCourse
 }: NavbarProps) {
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -223,9 +226,16 @@ export default function Navbar({
               </div>
             </div>
 
-            {/* ================= 3. RIGHT USER PROFILE DROPDOWN & MOBILE TOGGLE ================= */}
-            <div className="flex items-center gap-2">
+            {/* ================= 3. RIGHT USER PROFILE DROPDOWN, NOTIFICATIONS & MOBILE TOGGLE ================= */}
+            <div className="flex items-center gap-1.5 sm:gap-2">
               
+              {/* Notifications Interactive Bell Dropdown */}
+              <NotificationDropdown
+                userEmail={userEmail}
+                onNavigateToCourse={onNavigateToCourse}
+                onNavigateToLearning={onGoToLearning}
+              />
+
               {/* Profile Dropdown Container (Desktop & Tablet) */}
               <div className="relative" ref={dropdownRef}>
                 <button

@@ -42,3 +42,16 @@ export interface User {
   purchasedCourseIds: string[];
   completedLessonIds: { [courseId: string]: string[] };
 }
+
+export type NotificationType = 'purchase' | 'lesson' | 'certificate' | 'system' | 'welcome';
+
+export interface AppNotification {
+  id: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  timestamp: string; // ISO date string
+  read: boolean;
+  courseId?: string;
+}
+

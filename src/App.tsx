@@ -21,6 +21,7 @@ import {
 } from './services/db';
 import { isSessionVerifiedAdmin } from './services/auth';
 import { supabase } from './supabaseClient';
+import { addNotification } from './services/notifications';
 
 export default function App() {
   const [userToken, setUserToken] = useState<string | null>(null);
@@ -153,6 +154,15 @@ export default function App() {
     setPurchasedCourseIds(updated);
     if (userEmail) {
       await recordPurchaseInSupabase(userEmail, courseId);
+
+      const targetCourse = coursesList.find((c) => c.id === courseId);
+      const courseTitle = targetCourse ? targetCourse.title : 'tu curso seleccionado';
+      addNotification(userEmail, {
+        type: 'purchase',
+        title: '¡Pago e Inscripción confirmados!',
+        message: `Te has inscrito exitosamente en "${courseTitle}". Ya tienes acceso a todos sus capítulos y contenidos.`,
+        courseId
+      });
     }
   };
 
@@ -169,6 +179,33 @@ export default function App() {
 
     if (userEmail) {
       await toggleProgressInSupabase(userEmail, courseId, lessonId, willBeCompleted);
+
+      if (willBeCompleted) {
+        const course = coursesList.find((c) => c.id === courseId);
+        const lesson = course?.lessons.find((l) => l.id === lessonId);
+        const lessonTitle = lesson ? lesson.title : 'Lección';
+
+        const courseLessons = course?.lessons || [];
+        const isCourse100Percent =
+          courseLessons.length > 0 &&
+          courseLessons.every((l) => updated.includes(l.id));
+
+        if (isCourse100Percent) {
+          addNotification(userEmail, {
+            type: 'certificate',
+            title: '🎓 ¡Curso completado al 100%!',
+            message: `¡Enhorabuena! Has completado todas las clases de "${course?.title || 'tu curso'}". Ya puedes emitir y descargar tu Diploma de Acreditación.`,
+            courseId
+          });
+        } else {
+          addNotification(userEmail, {
+            type: 'lesson',
+            title: '¡Clase completada!',
+            message: `Completaste satisfactoriamente "${lessonTitle}". ¡Continúa avanzando!`,
+            courseId
+          });
+        }
+      }
     }
   };
 
@@ -200,6 +237,15 @@ export default function App() {
     const updated = [...coursesList, newCourse];
     setCoursesList(updated);
     await upsertCourseInSupabase(newCourse);
+
+    if (userEmail) {
+      addNotification(userEmail, {
+        type: 'system',
+        title: 'Nuevo curso publicado',
+        message: `Has creado y publicado el curso "${newCourse.title}". Ya está disponible en la plataforma.`,
+        courseId: newCourse.id
+      });
+    }
   };
 
   // 4. ADMIN: Add Lesson directly into Supabase 'lessons'
@@ -376,6 +422,14 @@ export default function App() {
         onGoToLearning={handleGoToLearning}
         showAdminBtn={isUserAdmin}
         onGoToAdmin={() => setCurrentView('admin')}
+        onNavigateToCourse={(courseId) => {
+          const target = coursesList.find((c) => c.id === courseId);
+          if (target) {
+            handleViewCourse(target);
+          } else {
+            handleGoToLearning();
+          }
+        }}
       />
 
       {/* Main Container Sandbox Views */}
