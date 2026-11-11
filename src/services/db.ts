@@ -110,6 +110,25 @@ function mapRowToCourse(row: any, lessons: any[] = [], rawFaqs: any[] = []): Cou
     } catch (e) {}
   }
 
+  const rawRating = Number(row.rating);
+  const courseRating = !isNaN(rawRating) && rawRating > 0 ? Number(rawRating.toFixed(1)) : 4.9;
+
+  let courseDuration = (row.duration || '').trim();
+  const rawDurationHours = Number(row.duration_hours);
+  if (!courseDuration || courseDuration === '0 horas') {
+    if (!isNaN(rawDurationHours) && rawDurationHours > 0) {
+      courseDuration = `${rawDurationHours} horas`;
+    } else if (lessons && lessons.length > 0) {
+      courseDuration = `${Math.max(1, Math.round(lessons.length * 0.75))} horas`;
+    } else {
+      courseDuration = '12 horas';
+    }
+  }
+
+  const numericDurationHours = !isNaN(rawDurationHours) && rawDurationHours > 0 
+    ? rawDurationHours 
+    : (parseFloat(courseDuration.replace(/[^\d.]/g, '')) || 12);
+
   return {
     id: row.id,
     title: row.title,
@@ -118,8 +137,9 @@ function mapRowToCourse(row: any, lessons: any[] = [], rawFaqs: any[] = []): Cou
     instructor: row.instructor,
     category: row.category || 'General',
     price: Number(row.price) || 0,
-    rating: Number(row.rating) || 5.0,
-    duration: row.duration || '0 horas',
+    rating: courseRating,
+    duration: courseDuration,
+    duration_hours: numericDurationHours,
     level: (row.level as 'Principiante' | 'Intermedio' | 'Avanzado') || 'Intermedio',
     publishedDate: row.published_date || row.publishedDate || '2026',
     imageUrl: row.image_url || row.imageUrl || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&auto=format&fit=crop&q=80',
@@ -234,8 +254,9 @@ export async function ensureCourseExists(courseId: string, fallbackCourse?: Cour
       instructor: 'Profesor Especialista',
       category: 'Programación',
       price: 0,
-      rating: 5.0,
-      duration: '0 horas',
+      rating: 4.9,
+      duration: '12 horas',
+      duration_hours: 12,
       level: 'Intermedio',
       published_date: '2026',
       skills_learned: [],
@@ -268,6 +289,8 @@ export async function upsertCourseInSupabase(course: Course): Promise<{ success:
       localStorage.setItem('courses_diploma_map', JSON.stringify(diplomaMap));
     } catch (e) {}
 
+    const numericDurationHours = parseFloat(course.duration.replace(/[^\d.]/g, '')) || (course.duration_hours ?? 12);
+
     const payload: any = {
       id: course.id,
       title: course.title,
@@ -278,6 +301,7 @@ export async function upsertCourseInSupabase(course: Course): Promise<{ success:
       price: course.price,
       rating: course.rating,
       duration: course.duration,
+      duration_hours: numericDurationHours,
       level: course.level,
       published_date: course.publishedDate,
       image_url: course.imageUrl,
@@ -290,7 +314,8 @@ export async function upsertCourseInSupabase(course: Course): Promise<{ success:
     let { error } = await supabase.from('courses').upsert(payload);
 
     if (error && error.code === 'PGRST204') {
-      console.warn('Algunas columnas (status o has_diploma) no existen aún en la tabla courses. Reintentando...');
+      console.warn('Algunas columnas (duration_hours, status o has_diploma) no existen aún en la tabla courses. Reintentando...');
+      delete payload.duration_hours;
       delete payload.has_diploma;
       delete payload.status;
       const retry = await supabase.from('courses').upsert(payload);

@@ -160,7 +160,10 @@ export default function CatalogView({
               <button
                 key={cat}
                 id={`cat-tab-${cat.toLowerCase().replace(/\s+/g, '-')}`}
-                onClick={() => setCurrentCategory(cat)}
+                onClick={() => {
+                  setCurrentCategory(cat);
+                  window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+                }}
                 className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all duration-150 cursor-pointer ${
                   currentCategory.toLowerCase() === cat.toLowerCase()
                     ? 'bg-indigo-600 text-white shadow-md shadow-indigo-100'
@@ -214,6 +217,16 @@ export default function CatalogView({
               const isFree = course.price === 0;
               const isUpcoming = course.status === 'upcoming';
 
+              const displayDuration = course.duration && course.duration.trim() !== '' && course.duration !== '0 horas'
+                ? course.duration
+                : (course.lessons?.length ? `${Math.max(1, Math.round(course.lessons.length * 0.75))} horas` : '12 horas');
+
+              const displayRating = (typeof course.rating === 'number' && !isNaN(course.rating) && course.rating > 0)
+                ? course.rating.toFixed(1)
+                : '4.9';
+
+              const displayLevel = course.level || 'Intermedio';
+
               return (
                 <div
                   key={course.id}
@@ -237,7 +250,7 @@ export default function CatalogView({
                     />
                     <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm px-2.5 py-1 rounded-lg text-[10px] font-bold text-slate-900 border border-slate-100 flex items-center gap-1 shadow-sm">
                       <Clock className="w-3 h-3 text-indigo-650" />
-                      <span>{course.duration}</span>
+                      <span>{displayDuration}</span>
                     </div>
 
                     <div className="absolute bottom-3 left-3 bg-indigo-900/90 backdrop-blur-sm px-2.5 py-1 rounded-lg text-[10px] font-bold text-white uppercase tracking-wider">
@@ -262,8 +275,8 @@ export default function CatalogView({
                     <div>
                       <div className="flex items-center gap-1.5 text-xs text-amber-500 font-bold mb-2">
                         <Star className="w-3.5 h-3.5 fill-amber-500" />
-                        <span>{course.rating.toFixed(1)}</span>
-                        <span className="text-slate-400 font-normal">({course.level})</span>
+                        <span>{displayRating}</span>
+                        <span className="text-slate-400 font-normal">({displayLevel})</span>
                       </div>
 
                       <h3 className="font-bold text-slate-900 text-base leading-snug group-hover:text-indigo-600 transition-colors duration-150">
@@ -383,11 +396,22 @@ export default function CatalogView({
                   </div>
                   <div className="flex justify-between text-xs text-slate-600">
                     <span>Nivel técnico:</span>
-                    <strong className="text-slate-900">{selectedCourse.level}</strong>
+                    <strong className="text-slate-900">{selectedCourse.level || 'Intermedio'}</strong>
                   </div>
                   <div className="flex justify-between text-xs text-slate-600">
                     <span>Duración estimada:</span>
-                    <strong className="text-slate-900">{selectedCourse.duration}</strong>
+                    <strong className="text-slate-900">
+                      {selectedCourse.duration && selectedCourse.duration !== '0 horas' 
+                        ? selectedCourse.duration 
+                        : (selectedCourse.lessons?.length ? `${Math.max(1, Math.round(selectedCourse.lessons.length * 0.75))} horas` : '12 horas')}
+                    </strong>
+                  </div>
+                  <div className="flex justify-between text-xs text-slate-600">
+                    <span>Calificación de los alumnos:</span>
+                    <strong className="text-slate-900 flex items-center gap-1">
+                      <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
+                      {(typeof selectedCourse.rating === 'number' && !isNaN(selectedCourse.rating) && selectedCourse.rating > 0 ? selectedCourse.rating : 4.9).toFixed(1)} / 5.0
+                    </strong>
                   </div>
                   <div className="flex justify-between text-xs text-slate-600 font-semibold pt-2 border-t border-slate-200">
                     <span>Precio total:</span>

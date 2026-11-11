@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Course, Lesson, CourseFaq } from '../types';
-import { Plus, BookOpen, Video, ArrowLeft, Image, DollarSign, Tag, Award, CheckCircle2, User, Sparkles, Trash2, Pencil, X, Database, Copy, Check, Eye, Edit3, FileText, HelpCircle } from 'lucide-react';
+import { Plus, BookOpen, Video, ArrowLeft, Image, DollarSign, Tag, Award, CheckCircle2, User, Sparkles, Trash2, Pencil, X, Database, Copy, Check, Eye, Edit3, FileText, HelpCircle, Clock, Star } from 'lucide-react';
 import { isSessionVerifiedAdmin } from '../services/auth';
 import { getDbStatus } from '../services/db';
 import RichLessonContent from './RichLessonContent';
@@ -65,6 +65,8 @@ export default function AdminView({
   const [category, setCategory] = useState('Programación');
   const [price, setPrice] = useState('39.99');
   const [level, setLevel] = useState<'Principiante' | 'Intermedio' | 'Avanzado'>('Intermedio');
+  const [duration, setDuration] = useState('12 horas');
+  const [rating, setRating] = useState('4.9');
   const [imageUrl, setImageUrl] = useState('');
   const [status, setStatus] = useState<'published' | 'upcoming'>('published');
   const [hasDiploma, setHasDiploma] = useState<boolean>(true);
@@ -153,6 +155,11 @@ export default function AdminView({
     if (!title.trim() || !description.trim()) return;
 
     const sanitizedCategory = category.trim() || 'General';
+    const cleanDuration = duration.trim()
+      ? (duration.toLowerCase().includes('hora') ? duration.trim() : `${duration.trim()} horas`)
+      : '12 horas';
+    const parsedRating = Math.min(5, Math.max(1, parseFloat(rating) || 4.9));
+    const numericDurationHours = parseFloat(cleanDuration.replace(/[^\d.]/g, '')) || 12;
 
     if (editingCourseId) {
       // MODE: UPDATE
@@ -170,6 +177,9 @@ export default function AdminView({
         level,
         status,
         hasDiploma,
+        duration: cleanDuration,
+        duration_hours: numericDurationHours,
+        rating: Number(parsedRating.toFixed(1)),
         imageUrl: imageUrl.trim() || existing.imageUrl || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&auto=format&fit=crop&q=80',
       };
 
@@ -181,6 +191,10 @@ export default function AdminView({
       setLongDescription('');
       setImageUrl('');
       setCategory('Programación');
+      setPrice('39.99');
+      setLevel('Intermedio');
+      setDuration('12 horas');
+      setRating('4.9');
       setStatus('published');
       setHasDiploma(true);
       setEditingCourseId(null);
@@ -195,8 +209,9 @@ export default function AdminView({
         instructor: instructor.trim(),
         category: sanitizedCategory,
         price: parseFloat(price) || 0,
-        rating: 5.0,
-        duration: '0 horas',
+        rating: Number(parsedRating.toFixed(1)),
+        duration: cleanDuration,
+        duration_hours: numericDurationHours,
         level,
         status,
         hasDiploma,
@@ -214,6 +229,10 @@ export default function AdminView({
       setLongDescription('');
       setImageUrl('');
       setCategory('Programación');
+      setPrice('39.99');
+      setLevel('Intermedio');
+      setDuration('12 horas');
+      setRating('4.9');
       setStatus('published');
       setHasDiploma(true);
       setCourseFormSuccess('¡Curso creado con éxito! Ya puedes añadirle clases o verlo en el catálogo.');
@@ -232,7 +251,9 @@ export default function AdminView({
     setInstructor(course.instructor);
     setCategory(course.category || 'General');
     setPrice(String(course.price));
-    setLevel(course.level);
+    setLevel(course.level || 'Intermedio');
+    setDuration(course.duration && course.duration !== '0 horas' ? course.duration : '12 horas');
+    setRating(String(course.rating || 4.9));
     setImageUrl(course.imageUrl);
     setStatus(course.status || 'published');
     setHasDiploma(course.hasDiploma !== false);
@@ -245,6 +266,10 @@ export default function AdminView({
     setLongDescription('');
     setImageUrl('');
     setCategory('Programación');
+    setPrice('39.99');
+    setLevel('Intermedio');
+    setDuration('12 horas');
+    setRating('4.9');
     setStatus('published');
     setHasDiploma(true);
   };
@@ -320,6 +345,8 @@ export default function AdminView({
     setCategory('Programación');
     setPrice('59.00');
     setLevel('Avanzado');
+    setDuration('16 horas');
+    setRating('4.9');
     setImageUrl('https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&auto=format&fit=crop&q=80');
   };
 
@@ -447,7 +474,7 @@ export default function AdminView({
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
                   <div className="flex items-center justify-between">
                     <label htmlFor="course-category" className="block text-xs font-bold text-slate-700">Categoría</label>
@@ -486,6 +513,7 @@ export default function AdminView({
                     ))}
                   </div>
                 </div>
+
                 <div>
                   <label htmlFor="course-price" className="block text-xs font-bold text-slate-700">Precio (USD) o 0 para Gratis</label>
                   <input
@@ -499,6 +527,7 @@ export default function AdminView({
                     className="mt-1 block w-full px-3 py-2 border border-slate-200 rounded-lg text-slate-900 focus:outline-none focus:ring-1 focus:ring-indigo-500 text-xs"
                   />
                 </div>
+
                 <div>
                   <label htmlFor="course-level" className="block text-xs font-bold text-slate-700">Nivel de Habilidad</label>
                   <select
@@ -511,6 +540,49 @@ export default function AdminView({
                     <option value="Intermedio">Intermedio</option>
                     <option value="Avanzado">Avanzado</option>
                   </select>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between">
+                    <label htmlFor="course-duration" className="block text-xs font-bold text-slate-700 flex items-center gap-1">
+                      <Clock className="w-3.5 h-3.5 text-indigo-600" />
+                      <span>Duración (en horas)</span>
+                    </label>
+                    <span className="text-[10px] text-slate-400 font-medium">Ej. 12 horas</span>
+                  </div>
+                  <input
+                    id="course-duration"
+                    type="text"
+                    required
+                    value={duration}
+                    onChange={(e) => setDuration(e.target.value)}
+                    placeholder="Ej. 12 horas o 20 horas"
+                    className="mt-1 block w-full px-3 py-2 border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 text-xs"
+                  />
+                  <span className="text-[10px] text-slate-400 mt-1 block">Inspeccionable en la tarjeta del catálogo</span>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between">
+                    <label htmlFor="course-rating" className="block text-xs font-bold text-slate-700 flex items-center gap-1">
+                      <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+                      <span>Calificación (Rating)</span>
+                    </label>
+                    <span className="text-[10px] text-amber-600 font-bold">{Number(rating || 4.9).toFixed(1)} / 5.0</span>
+                  </div>
+                  <input
+                    id="course-rating"
+                    type="number"
+                    step="0.1"
+                    min="1.0"
+                    max="5.0"
+                    required
+                    value={rating}
+                    onChange={(e) => setRating(e.target.value)}
+                    placeholder="Ej. 4.9"
+                    className="mt-1 block w-full px-3 py-2 border border-slate-200 rounded-lg text-slate-900 focus:outline-none focus:ring-1 focus:ring-indigo-500 text-xs"
+                  />
+                  <span className="text-[10px] text-slate-400 mt-1 block">Escala de 1.0 a 5.0 para las estrellas</span>
                 </div>
               </div>
 
@@ -1079,8 +1151,18 @@ export default function AdminView({
                           </span>
                         )}
                       </div>
-                      <p className="text-slate-400 text-[10px] mt-0.5">
-                        Categoría: {c.category || 'General'} | Clases: <strong>{c.lessons.length}</strong> | Precio: {c.price === 0 ? 'Gratis' : `${c.price} USD`}
+                      <p className="text-slate-500 text-[10px] mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                        <span>Categoría: <strong className="text-slate-700">{c.category || 'General'}</strong></span>
+                        <span>•</span>
+                        <span>Nivel: <strong className="text-slate-700">{c.level || 'Intermedio'}</strong></span>
+                        <span>•</span>
+                        <span>Duración: <strong className="text-slate-700">{c.duration || '12 horas'}</strong></span>
+                        <span>•</span>
+                        <span className="text-amber-600 font-bold">★ {(Number(c.rating) || 4.9).toFixed(1)}</span>
+                        <span>•</span>
+                        <span>Clases: <strong className="text-slate-700">{c.lessons.length}</strong></span>
+                        <span>•</span>
+                        <span>Precio: <strong className="text-slate-700">{c.price === 0 ? 'Gratis' : `${c.price} USD`}</strong></span>
                       </p>
                     </div>
 

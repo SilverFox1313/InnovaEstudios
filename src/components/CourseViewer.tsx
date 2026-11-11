@@ -89,6 +89,11 @@ export default function CourseViewer({
     }
   }, [course, notesStorageKey]);
 
+  // Explicitly scroll window to top upon mounting classroom or changing active lesson
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, [course.id, activeLesson?.id]);
+
   // Handle saving new custom learner notes safely
   const handleSaveNote = (e: React.FormEvent) => {
     e.preventDefault();

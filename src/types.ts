@@ -24,6 +24,7 @@ export interface Course {
   price: number;
   rating: number;
   duration: string;
+  duration_hours?: number;
   level: 'Principiante' | 'Intermedio' | 'Avanzado';
   publishedDate: string;
   imageUrl: string;

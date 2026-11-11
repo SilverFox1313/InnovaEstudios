@@ -6,6 +6,7 @@ import CatalogView from './components/CatalogView';
 import CourseViewer from './components/CourseViewer';
 import AdminView from './components/AdminView';
 import Footer from './components/Footer';
+import ScrollToTop from './components/ScrollToTop';
 import {
   fetchCoursesFromSupabase,
   upsertCourseInSupabase,
@@ -175,6 +176,7 @@ export default function App() {
     const actualCourse = coursesList.find(c => c.id === course.id) || course;
     setActiveCourse(actualCourse);
     setCurrentView('viewer');
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   };
 
   const [catalogCategory, setCatalogCategory] = useState<string>('Todos');
@@ -183,12 +185,14 @@ export default function App() {
     setActiveCourse(null);
     setCatalogCategory('Todos');
     setCurrentView('catalog');
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   };
 
   const handleGoToLearning = () => {
     setActiveCourse(null);
     setCatalogCategory('Mis Cursos');
     setCurrentView('catalog');
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   };
 
   // 3. ADMIN: Add new Course directly into Supabase 'courses'
@@ -358,6 +362,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans selection:bg-indigo-100 selection:text-indigo-900">
+      <ScrollToTop dependencies={[currentView, activeCourse?.id, catalogCategory]} />
       
       {/* Global Dashboard Navigation Header */}
       <Navbar
