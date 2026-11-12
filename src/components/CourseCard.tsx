@@ -89,8 +89,8 @@ export default function CourseCard({
         </div>
 
         {isUpcoming ? (
-          <div className="absolute top-3 right-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white px-3 py-1 rounded-lg text-[10px] font-extrabold tracking-wide shadow-md flex items-center gap-1.5 border border-amber-400/50 uppercase z-10">
-            <Sparkles className="w-3 h-3 text-amber-100" />
+          <div className="absolute top-3 right-3 bg-white/90 dark:bg-slate-900/85 backdrop-blur-md text-amber-600 dark:text-amber-400 px-3 py-1 rounded-xl text-[11px] font-medium tracking-wide shadow-sm flex items-center gap-1.5 border border-amber-500/25 dark:border-amber-400/25 z-10">
+            <Sparkles className="w-3.5 h-3.5 flex-shrink-0" />
             <span>Próximamente</span>
           </div>
         ) : isOwned ? (
@@ -125,7 +125,7 @@ export default function CourseCard({
             <span className="text-[10px] text-slate-400 dark:text-slate-300 uppercase tracking-wider block font-semibold">Precio</span>
             <span className="text-md font-extrabold text-slate-900 dark:text-white">
               {isUpcoming ? (
-                <span className="text-amber-700 dark:text-amber-300 font-bold text-xs">Por anunciar</span>
+                <span className="text-amber-600 dark:text-amber-400 font-medium text-xs">Por anunciar</span>
               ) : isFree ? (
                 <span className="text-emerald-600 dark:text-emerald-300">Gratuito</span>
               ) : (
@@ -137,9 +137,9 @@ export default function CourseCard({
           {/* Action trigger button */}
           {isUpcoming ? (
             <div
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/80 border border-amber-200 dark:border-amber-700 text-amber-800 dark:text-amber-200 text-[11px] font-bold shadow-2xs"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-amber-500/10 dark:bg-amber-400/10 border border-amber-500/20 dark:border-amber-400/20 text-amber-600 dark:text-amber-400 text-xs font-medium"
             >
-              <Clock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-300 flex-shrink-0" />
+              <Clock className="w-3.5 h-3.5 flex-shrink-0" />
               <span>Disponible muy pronto</span>
             </div>
           ) : isOwned ? (

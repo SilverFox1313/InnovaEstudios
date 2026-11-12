@@ -260,9 +260,14 @@ export default function CatalogView({
                   referrerPolicy="no-referrer"
                 />
                 <button
+                  type="button"
                   id="close-modal-btn"
-                  onClick={() => setSelectedCourse(null)}
-                  className="absolute top-4 right-4 bg-black/50 hover:bg-black/75 p-2 rounded-full text-white transition-all border border-white/10 cursor-pointer"
+                  aria-label="Cerrar detalles del curso"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedCourse(null);
+                  }}
+                  className="absolute top-4 right-4 z-50 bg-black/55 hover:bg-black/80 p-2 rounded-full text-white transition-all border border-white/15 cursor-pointer shadow-md"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -272,8 +277,8 @@ export default function CatalogView({
                       {selectedCourse.category || 'General'}
                     </span>
                     {selectedCourse.status === 'upcoming' && (
-                      <span className="bg-amber-500 text-white px-3 py-0.5 rounded text-[11px] uppercase font-extrabold tracking-wider flex items-center gap-1 shadow-sm">
-                        <Sparkles className="w-3.5 h-3.5" />
+                      <span className="bg-amber-500/15 backdrop-blur-md text-amber-300 px-3 py-1 rounded-xl text-[11px] font-medium tracking-wide flex items-center gap-1.5 border border-amber-400/30">
+                        <Sparkles className="w-3.5 h-3.5 flex-shrink-0" />
                         <span>Próximamente</span>
                       </span>
                     )}
@@ -324,7 +329,7 @@ export default function CatalogView({
                     <span>Precio total:</span>
                     <span className="text-slate-900 dark:text-white font-extrabold text-sm sm:text-base">
                       {selectedCourse.status === 'upcoming' ? (
-                        <span className="text-amber-700 dark:text-amber-400 font-bold">Por anunciar</span>
+                        <span className="text-amber-600 dark:text-amber-400 font-semibold">Por anunciar</span>
                       ) : selectedCourse.price === 0 ? (
                         <span className="text-emerald-600 dark:text-emerald-400">Completamente Gratis</span>
                       ) : (
@@ -335,11 +340,15 @@ export default function CatalogView({
                 </div>
 
                 {selectedCourse.status === 'upcoming' && (
-                  <div className="flex items-start gap-3 p-4 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200 text-xs sm:text-sm">
-                    <Clock className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <p className="font-bold text-slate-900 dark:text-amber-100">Curso en preparación (Próximo Lanzamiento)</p>
-                      <p className="text-xs sm:text-sm text-amber-900/90 dark:text-amber-200/90 mt-1 leading-relaxed">
+                  <div className="flex items-start gap-3.5 p-4 sm:p-5 rounded-xl bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 border-l-4 border-l-amber-500 dark:border-l-amber-400 text-amber-900 dark:text-amber-200 shadow-sm">
+                    <div className="p-2 rounded-xl bg-amber-500/10 dark:bg-amber-400/10 text-amber-600 dark:text-amber-400 flex-shrink-0">
+                      <Clock className="w-5 h-5" />
+                    </div>
+                    <div className="space-y-1">
+                      <p className="font-bold text-sm sm:text-base text-amber-950 dark:text-amber-100">
+                        Curso en Preparación
+                      </p>
+                      <p className="text-sm leading-relaxed opacity-90">
                         El temario y los recursos están en proceso de estructuración. El botón de inscripción y pago se activará automáticamente tan pronto como el curso se publique de manera oficial.
                       </p>
                     </div>
@@ -383,8 +392,8 @@ export default function CatalogView({
                   </button>
 
                   {selectedCourse.status === 'upcoming' ? (
-                    <div className="flex-1 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 font-bold text-xs sm:text-sm py-3 px-3 rounded-xl border border-amber-200 dark:border-amber-800 text-center flex items-center justify-center gap-1.5 shadow-2xs">
-                      <Clock className="w-4.5 h-4.5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+                    <div className="flex-1 bg-amber-500/10 dark:bg-amber-400/10 text-amber-600 dark:text-amber-400 font-medium text-xs sm:text-sm py-3 px-4 rounded-xl border border-amber-500/20 dark:border-amber-400/20 text-center flex items-center justify-center gap-2">
+                      <Clock className="w-4 h-4 flex-shrink-0" />
                       <span>Disponible muy pronto</span>
                     </div>
                   ) : purchasedCourseIds.includes(selectedCourse.id) ? (
