@@ -856,11 +856,11 @@ export default function AdminView({
                     </div>
                   </div>
 
-                  {/* Video URL is now COMPLETELY OPTIONAL */}
+                  {/* Video URL is now COMPLETELY OPTIONAL and supports YouTube or direct MP4 */}
                   <div>
                     <div className="flex justify-between items-center mb-1">
                       <label htmlFor="lesson-video-url" className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                        Enlace de Video MP4 <span className="font-normal text-slate-400 dark:text-slate-500">(Opcional)</span>
+                        Enlace de Video (YouTube o MP4 directo - Opcional)
                       </label>
                       <span className="text-[10px] text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 rounded-full font-medium">
                         Vacío = Curso tipo Lectura / E-book
@@ -871,7 +871,7 @@ export default function AdminView({
                       type="url"
                       value={lessonVideoUrl}
                       onChange={(e) => setLessonVideoUrl(e.target.value)}
-                      placeholder="https://... (déjalo vacío si el capítulo es solo lectura e imágenes)"
+                      placeholder="https://www.youtube.com/watch?v=... o https://.../video.mp4 (déjalo vacío si es solo lectura)"
                       className="block w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white bg-white dark:bg-slate-800 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500 text-xs"
                     />
                   </div>

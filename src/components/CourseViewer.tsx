@@ -29,6 +29,25 @@ import {
 import RichLessonContent from './RichLessonContent';
 import { getDefaultFaqsForCourse } from '../services/db';
 
+/**
+ * Automatically extracts the YouTube Video ID from various YouTube URL formats:
+ * - https://www.youtube.com/watch?v=VIDEO_ID
+ * - https://youtu.be/VIDEO_ID
+ * - https://www.youtube.com/shorts/VIDEO_ID
+ * - https://www.youtube.com/embed/VIDEO_ID
+ * - https://m.youtube.com/watch?v=VIDEO_ID
+ */
+export function getYouTubeVideoId(url: string | undefined | null): string | null {
+  if (!url || typeof url !== 'string') return null;
+  const trimmed = url.trim();
+  if (!trimmed) return null;
+
+  const regExp = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?|shorts)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i;
+  const match = trimmed.match(regExp);
+
+  return match && match[1] ? match[1] : null;
+}
+
 interface CourseViewerProps {
   course: Course;
   completedLessonIds: string[];
@@ -165,6 +184,10 @@ export default function CourseViewer({
 
   // Reading / Video detection & Chapter Navigation
   const hasVideo = Boolean(activeLesson?.videoUrl && activeLesson.videoUrl.trim() !== '');
+  const youtubeVideoId = useMemo(() => {
+    return getYouTubeVideoId(activeLesson?.videoUrl);
+  }, [activeLesson?.videoUrl]);
+
   const isCompleted = activeLesson ? completedLessonIds.includes(activeLesson.id) : false;
   const currentLessonIndex = course.lessons.findIndex(l => l.id === activeLesson?.id);
   const prevLesson = currentLessonIndex > 0 ? course.lessons[currentLessonIndex - 1] : null;
@@ -181,12 +204,12 @@ export default function CourseViewer({
     }
   };
 
-  // Change video source cleanly when active lesson changes
+  // Change video source cleanly when active lesson changes (only for HTML5 video files)
   useEffect(() => {
-    if (videoRef.current && hasVideo) {
+    if (videoRef.current && hasVideo && !youtubeVideoId) {
       videoRef.current.load();
     }
-  }, [activeLesson, hasVideo]);
+  }, [activeLesson, hasVideo, youtubeVideoId]);
 
   return (
     <div className="bg-slate-50 dark:bg-slate-800 min-h-screen transition-colors duration-200">
@@ -265,12 +288,20 @@ export default function CourseViewer({
                   />
 
                   <div className="bg-black rounded-2xl overflow-hidden aspect-video relative shadow-lg dark:shadow-[0_0_20px_rgba(168,85,247,0.15)] border border-transparent dark:border-purple-500/30 transition-all duration-300" id="classroom-player-wrapper">
-                    {activeLesson ? (
+                    {youtubeVideoId ? (
+                      <iframe
+                        src={`https://www.youtube.com/embed/${youtubeVideoId}?rel=0`}
+                        title={activeLesson ? activeLesson.title : 'Reproductor de Video'}
+                        className="w-full h-full aspect-video rounded-xl border-0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        allowFullScreen
+                      />
+                    ) : activeLesson ? (
                       <video
                         ref={videoRef}
                         src={activeLesson.videoUrl}
                         controls
-                        className="w-full h-full object-contain"
+                        className="w-full h-full object-contain rounded-xl"
                         poster="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1200&auto=format&fit=crop&q=80"
                       >
                         Tu navegador no soporta reproducción de vídeo HTML5.
