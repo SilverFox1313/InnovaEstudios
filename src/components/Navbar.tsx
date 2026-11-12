@@ -327,9 +327,9 @@ export default function Navbar({
                         <button
                           id="dropdown-logout-btn"
                           onClick={() => handleNavClick(onLogout)}
-                          className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl transition-colors text-left cursor-pointer"
+                          className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-rose-600 dark:text-rose-400 bg-transparent border border-transparent hover:bg-rose-50 dark:bg-slate-800/40 dark:border-slate-700/80 dark:hover:bg-rose-500/10 dark:hover:border-rose-500/40 dark:hover:text-rose-300 transition-all duration-200 rounded-xl text-left cursor-pointer"
                         >
-                          <LogOut className="w-4 h-4 text-rose-500" />
+                          <LogOut className="w-4 h-4 text-rose-500 dark:text-rose-400" />
                           <span>Cerrar Sesión</span>
                         </button>
                       </div>
@@ -446,9 +446,9 @@ export default function Navbar({
                 <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
                   <button
                     onClick={() => handleNavClick(onLogout)}
-                    className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-400 text-xs font-bold rounded-xl transition-colors"
+                    className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-transparent border border-transparent hover:bg-rose-50 dark:bg-slate-800/40 dark:border dark:border-slate-700/80 dark:hover:bg-rose-500/10 dark:hover:border-rose-500/40 text-rose-600 dark:text-rose-400 dark:hover:text-rose-300 text-xs font-bold rounded-xl transition-all duration-200 cursor-pointer"
                   >
-                    <LogOut className="w-4 h-4" />
+                    <LogOut className="w-4 h-4 text-rose-500 dark:text-rose-400" />
                     <span>Cerrar Sesión</span>
                   </button>
                 </div>
