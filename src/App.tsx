@@ -255,7 +255,11 @@ export default function App() {
   const handleAddCourse = async (newCourse: Course) => {
     const updated = [...coursesList, newCourse];
     setCoursesList(updated);
-    await upsertCourseInSupabase(newCourse);
+    localStorage.setItem('courses_dynamic', JSON.stringify(updated));
+    const res = await upsertCourseInSupabase(newCourse);
+    if (!res.success) {
+      console.error('No se pudo guardar el nuevo curso en Supabase:', res.error);
+    }
 
     if (userEmail) {
       addNotification(userEmail, {
@@ -313,6 +317,7 @@ export default function App() {
       return course;
     });
     setCoursesList(updated);
+    localStorage.setItem('courses_dynamic', JSON.stringify(updated));
 
     if (activeCourse && activeCourse.id === updatedCourse.id) {
       setActiveCourse({
@@ -322,7 +327,10 @@ export default function App() {
       });
     }
 
-    await upsertCourseInSupabase(updatedCourse);
+    const res = await upsertCourseInSupabase(updatedCourse);
+    if (!res.success) {
+      console.error('No se pudo actualizar el curso en Supabase:', res.error);
+    }
   };
 
   // 7. ADMIN: Update Lesson directly in Supabase 'lessons'

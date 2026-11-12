@@ -7,6 +7,8 @@ export interface DbStatus {
 }
 
 let cachedDbStatus: DbStatus = { isLiveDb: false };
+const unsupportedCourseColumns = new Set<string>();
+let hasIsPublishedColumn = false;
 
 export function getDbStatus(): DbStatus {
   return cachedDbStatus;
@@ -78,16 +80,17 @@ function mapRowToCourse(row: any, lessons: any[] = [], rawFaqs: any[] = []): Cou
     }
   }
 
-  // Check Supabase column first, fallback to cached status map
+  // Check Supabase column first, fallback to cached status map only if DB lacks status columns
+  const rawStatus = typeof row.status === 'string' ? row.status.trim().toLowerCase() : '';
   let courseStatus: 'published' | 'upcoming' = 'published';
-  if (row.status === 'upcoming' || row.is_published === false) {
-    courseStatus = 'upcoming';
-  } else if (row.status === 'published' || row.is_published === true) {
-    courseStatus = 'published';
+  if (rawStatus === 'upcoming' || rawStatus === 'published') {
+    courseStatus = rawStatus;
+  } else if (typeof row.is_published === 'boolean') {
+    courseStatus = row.is_published ? 'published' : 'upcoming';
   } else {
     try {
       const statusMap = JSON.parse(localStorage.getItem('courses_status_map') || '{}');
-      if (statusMap[row.id]) {
+      if (statusMap[row.id] === 'upcoming' || statusMap[row.id] === 'published') {
         courseStatus = statusMap[row.id];
       }
     } catch (e) {}
@@ -197,6 +200,13 @@ export async function fetchCoursesFromSupabase(): Promise<{ courses: Course[]; i
     if (!coursesData || coursesData.length === 0) {
       localStorage.setItem('courses_dynamic', JSON.stringify([]));
       return { courses: [], isLiveDb: true };
+    }
+
+    const sampleRow = coursesData[0];
+    if (sampleRow && typeof sampleRow === 'object') {
+      if ('is_published' in sampleRow) hasIsPublishedColumn = true;
+      if (!('duration_hours' in sampleRow)) unsupportedCourseColumns.add('duration_hours');
+      if (!('has_diploma' in sampleRow)) unsupportedCourseColumns.add('has_diploma');
     }
 
     const dbCourses = coursesData.map((row: any) => mapRowToCourse(row, row.lessons, row.course_faqs));
@@ -311,13 +321,44 @@ export async function upsertCourseInSupabase(course: Course): Promise<{ success:
       updated_at: new Date().toISOString()
     };
 
+    if (hasIsPublishedColumn) {
+      payload.is_published = courseStatus === 'published';
+    }
+
+    // Omit columns already known to be absent in the Supabase table
+    unsupportedCourseColumns.forEach((col) => {
+      delete payload[col];
+    });
+
     let { error } = await supabase.from('courses').upsert(payload);
 
-    if (error && error.code === 'PGRST204') {
-      console.warn('Algunas columnas (duration_hours, status o has_diploma) no existen aún en la tabla courses. Reintentando...');
-      delete payload.duration_hours;
-      delete payload.has_diploma;
-      delete payload.status;
+    // Strip ONLY the specific missing column reported by PostgREST (PGRST204)
+    let attempts = 0;
+    while (error && error.code === 'PGRST204' && attempts < 6) {
+      attempts++;
+      const msg = error.message || '';
+      const match = msg.match(/Could not find the '([^']+)' column/i) || msg.match(/'([a-zA-Z0-9_]+)'/);
+      const missingCol = match?.[1];
+
+      if (missingCol && missingCol !== 'id' && missingCol in payload) {
+        console.warn(`Columna opcional "${missingCol}" no existe en courses; omitiendo y reintentando.`);
+        unsupportedCourseColumns.add(missingCol);
+        delete payload[missingCol];
+      } else if ('duration_hours' in payload) {
+        unsupportedCourseColumns.add('duration_hours');
+        delete payload.duration_hours;
+      } else if ('has_diploma' in payload) {
+        unsupportedCourseColumns.add('has_diploma');
+        delete payload.has_diploma;
+      } else if ('is_published' in payload) {
+        delete payload.is_published;
+      } else if ('status' in payload) {
+        unsupportedCourseColumns.add('status');
+        delete payload.status;
+      } else {
+        break;
+      }
+
       const retry = await supabase.from('courses').upsert(payload);
       error = retry.error;
     }
