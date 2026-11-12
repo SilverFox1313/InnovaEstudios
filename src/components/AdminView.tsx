@@ -777,6 +777,79 @@ export default function AdminView({
           {/* Panel 2: Create classes/lessons & View Course overview */}
           <div className="space-y-8">
             
+            {/* List and manage courses overview */}
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm space-y-4 transition-colors">
+              <h3 className="font-bold text-slate-900 dark:text-white text-sm">Cursos de la Plataforma ({courses.length})</h3>
+              
+              <div className="divide-y divide-slate-150 dark:divide-slate-800 max-h-60 overflow-y-auto pr-1">
+                {courses.map((c) => (
+                  <div key={c.id} className="py-3 flex items-center justify-between gap-4 text-xs">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="font-bold text-slate-900 dark:text-white truncate">{c.title}</p>
+                        {c.status === 'upcoming' ? (
+                          <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 flex-shrink-0">
+                            Próximamente
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 flex-shrink-0">
+                            Publicado
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-slate-500 dark:text-slate-400 text-[10px] mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                        <span>Categoría: <strong className="text-slate-700 dark:text-slate-300">{c.category || 'General'}</strong></span>
+                        <span>•</span>
+                        <span>Nivel: <strong className="text-slate-700 dark:text-slate-300">{c.level || 'Intermedio'}</strong></span>
+                        <span>•</span>
+                        <span>Duración: <strong className="text-slate-700 dark:text-slate-300">{c.duration || '12 horas'}</strong></span>
+                        <span>•</span>
+                        <span className="text-amber-600 dark:text-amber-400 font-bold">★ {(Number(c.rating) || 4.9).toFixed(1)}</span>
+                        <span>•</span>
+                        <span>Clases: <strong className="text-slate-700 dark:text-slate-300">{c.lessons.length}</strong></span>
+                        <span>•</span>
+                        <span>Precio: <strong className="text-slate-700 dark:text-slate-300">{c.price === 0 ? 'Gratis' : `${c.price} USD`}</strong></span>
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newStatus = c.status === 'upcoming' ? 'published' : 'upcoming';
+                          onUpdateCourse({ ...c, status: newStatus });
+                        }}
+                        title={`Cambiar estado a ${c.status === 'upcoming' ? 'Publicado' : 'Próximamente'}`}
+                        className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-colors cursor-pointer ${
+                          c.status === 'upcoming'
+                            ? 'bg-amber-100/70 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 hover:bg-emerald-100 dark:hover:bg-emerald-950/80 hover:text-emerald-800'
+                            : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-amber-100 dark:hover:bg-amber-950/60 hover:text-amber-800'
+                        }`}
+                      >
+                        {c.status === 'upcoming' ? 'Publicar' : 'A Próximamente'}
+                      </button>
+
+                      <button
+                        onClick={() => handleStartEditCourse(c)}
+                        title="Editar curso"
+                        className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-indigo-650 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 rounded-lg transition-colors flex-shrink-0 cursor-pointer"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                      <button
+                        id={`delete-course-btn-${c.id}`}
+                        onClick={() => onDeleteCourse(c.id)}
+                        title="Eliminar curso"
+                        className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/60 rounded-lg transition-colors flex-shrink-0 cursor-pointer"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             {/* Adding/Editing Lessons directly */}
             <div
               ref={lessonFormRef}
@@ -1194,80 +1267,6 @@ export default function AdminView({
                 </div>
               )}
             </div>
-
-            {/* List and manage courses overview */}
-            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm space-y-4 transition-colors">
-              <h3 className="font-bold text-slate-900 dark:text-white text-sm">Cursos de la Plataforma ({courses.length})</h3>
-              
-              <div className="divide-y divide-slate-150 dark:divide-slate-800 max-h-60 overflow-y-auto pr-1">
-                {courses.map((c) => (
-                  <div key={c.id} className="py-3 flex items-center justify-between gap-4 text-xs">
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="font-bold text-slate-900 dark:text-white truncate">{c.title}</p>
-                        {c.status === 'upcoming' ? (
-                          <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 flex-shrink-0">
-                            Próximamente
-                          </span>
-                        ) : (
-                          <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 flex-shrink-0">
-                            Publicado
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-slate-500 dark:text-slate-400 text-[10px] mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                        <span>Categoría: <strong className="text-slate-700 dark:text-slate-300">{c.category || 'General'}</strong></span>
-                        <span>•</span>
-                        <span>Nivel: <strong className="text-slate-700 dark:text-slate-300">{c.level || 'Intermedio'}</strong></span>
-                        <span>•</span>
-                        <span>Duración: <strong className="text-slate-700 dark:text-slate-300">{c.duration || '12 horas'}</strong></span>
-                        <span>•</span>
-                        <span className="text-amber-600 dark:text-amber-400 font-bold">★ {(Number(c.rating) || 4.9).toFixed(1)}</span>
-                        <span>•</span>
-                        <span>Clases: <strong className="text-slate-700 dark:text-slate-300">{c.lessons.length}</strong></span>
-                        <span>•</span>
-                        <span>Precio: <strong className="text-slate-700 dark:text-slate-300">{c.price === 0 ? 'Gratis' : `${c.price} USD`}</strong></span>
-                      </p>
-                    </div>
-
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const newStatus = c.status === 'upcoming' ? 'published' : 'upcoming';
-                          onUpdateCourse({ ...c, status: newStatus });
-                        }}
-                        title={`Cambiar estado a ${c.status === 'upcoming' ? 'Publicado' : 'Próximamente'}`}
-                        className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-colors cursor-pointer ${
-                          c.status === 'upcoming'
-                            ? 'bg-amber-100/70 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 hover:bg-emerald-100 dark:hover:bg-emerald-950/80 hover:text-emerald-800'
-                            : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-amber-100 dark:hover:bg-amber-950/60 hover:text-amber-800'
-                        }`}
-                      >
-                        {c.status === 'upcoming' ? 'Publicar' : 'A Próximamente'}
-                      </button>
-
-                      <button
-                        onClick={() => handleStartEditCourse(c)}
-                        title="Editar curso"
-                        className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-indigo-650 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 rounded-lg transition-colors flex-shrink-0 cursor-pointer"
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </button>
-                      <button
-                        id={`delete-course-btn-${c.id}`}
-                        onClick={() => onDeleteCourse(c.id)}
-                        title="Eliminar curso"
-                        className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/60 rounded-lg transition-colors flex-shrink-0 cursor-pointer"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
           </div>
 
         </div>
