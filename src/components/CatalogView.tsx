@@ -342,10 +342,17 @@ export default function CatalogView({
 
         {/* Detailed Modal of selected Course */}
         {selectedCourse && !purchaseModalOpen && (
-          <div className="fixed inset-0 bg-slate-900/60 dark:bg-black/75 backdrop-blur-xs z-50 flex justify-center items-center p-4 overflow-y-auto" id="course-details-modal">
-            <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white transition-colors">
+          <div 
+            className="fixed inset-0 bg-slate-900/60 dark:bg-black/75 backdrop-blur-xs z-50 flex justify-center items-center p-4 sm:p-6 overflow-y-auto cursor-pointer" 
+            id="course-details-modal"
+            onClick={() => setSelectedCourse(null)}
+          >
+            <div 
+              className="bg-white dark:bg-slate-900 rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white transition-colors cursor-default"
+              onClick={(e) => e.stopPropagation()}
+            >
               {/* Header block picture */}
-              <div className="relative h-48 bg-slate-900 text-white">
+              <div className="relative h-52 sm:h-60 bg-slate-900 text-white">
                 <img
                   src={selectedCourse.imageUrl}
                   alt={selectedCourse.title}
@@ -355,67 +362,67 @@ export default function CatalogView({
                 <button
                   id="close-modal-btn"
                   onClick={() => setSelectedCourse(null)}
-                  className="absolute top-4 right-4 bg-black/50 hover:bg-black/75 p-2 rounded-full text-white transition-all border border-white/10"
+                  className="absolute top-4 right-4 bg-black/50 hover:bg-black/75 p-2 rounded-full text-white transition-all border border-white/10 cursor-pointer"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="w-5 h-5" />
                 </button>
-                <div className="absolute bottom-4 left-6 pr-6">
+                <div className="absolute bottom-4 sm:bottom-6 left-6 sm:left-8 pr-6 sm:pr-8">
                   <div className="flex items-center gap-2">
-                    <span className="bg-indigo-600 px-2.5 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider">
+                    <span className="bg-indigo-600 px-3 py-0.5 rounded text-[11px] uppercase font-bold tracking-wider">
                       {selectedCourse.category || 'General'}
                     </span>
                     {selectedCourse.status === 'upcoming' && (
-                      <span className="bg-amber-500 text-white px-2.5 py-0.5 rounded text-[10px] uppercase font-extrabold tracking-wider flex items-center gap-1 shadow-sm">
-                        <Sparkles className="w-3 h-3" />
+                      <span className="bg-amber-500 text-white px-3 py-0.5 rounded text-[11px] uppercase font-extrabold tracking-wider flex items-center gap-1 shadow-sm">
+                        <Sparkles className="w-3.5 h-3.5" />
                         <span>Próximamente</span>
                       </span>
                     )}
                   </div>
-                  <h2 className="text-xl sm:text-2xl font-bold mt-2 text-white leading-tight">
+                  <h2 className="text-2xl sm:text-3xl font-extrabold mt-2 text-white leading-tight">
                     {selectedCourse.title}
                   </h2>
                 </div>
               </div>
 
               {/* Modal body info details */}
-              <div className="p-6 space-y-6">
+              <div className="p-6 sm:p-8 space-y-6 sm:space-y-8">
                 <div>
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-400 mb-3">Sobre el curso</h4>
-                  <p className="text-slate-600 dark:text-slate-300 text-xs leading-relaxed mt-4">
+                  <h4 className="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-300 mb-3">Sobre el curso</h4>
+                  <p className="text-slate-700 dark:text-slate-200 text-sm sm:text-base leading-relaxed mt-2 font-normal">
                     {selectedCourse.longDescription}
                   </p>
                 </div>
 
-                <div className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-xl border border-slate-150 dark:border-slate-700 space-y-3">
-                  <div className="flex justify-between text-xs text-slate-600 dark:text-slate-400">
+                <div className="bg-slate-50 dark:bg-slate-800/80 p-5 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3.5">
+                  <div className="flex justify-between text-xs sm:text-sm text-slate-600 dark:text-slate-300 font-medium">
                     <span>Profesor principal:</span>
-                    <strong className="text-slate-900 dark:text-white flex items-center gap-1">
-                      <User className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400" />
+                    <strong className="text-slate-900 dark:text-slate-100 font-bold flex items-center gap-1.5">
+                      <User className="w-4 h-4 text-indigo-500 dark:text-indigo-400" />
                       {selectedCourse.instructor}
                     </strong>
                   </div>
-                  <div className="flex justify-between text-xs text-slate-600 dark:text-slate-400">
+                  <div className="flex justify-between text-xs sm:text-sm text-slate-600 dark:text-slate-300 font-medium">
                     <span>Nivel técnico:</span>
-                    <strong className="text-slate-900 dark:text-white">{selectedCourse.level || 'Intermedio'}</strong>
+                    <strong className="text-slate-900 dark:text-slate-100 font-bold">{selectedCourse.level || 'Intermedio'}</strong>
                   </div>
-                  <div className="flex justify-between text-xs text-slate-600 dark:text-slate-400">
+                  <div className="flex justify-between text-xs sm:text-sm text-slate-600 dark:text-slate-300 font-medium">
                     <span>Duración estimada:</span>
-                    <strong className="text-slate-900 dark:text-white">
+                    <strong className="text-slate-900 dark:text-slate-100 font-bold">
                       {selectedCourse.duration && selectedCourse.duration !== '0 horas' 
                         ? selectedCourse.duration 
                         : (selectedCourse.lessons?.length ? `${Math.max(1, Math.round(selectedCourse.lessons.length * 0.75))} horas` : '12 horas')}
                     </strong>
                   </div>
-                  <div className="flex justify-between text-xs text-slate-600 dark:text-slate-400">
+                  <div className="flex justify-between text-xs sm:text-sm text-slate-600 dark:text-slate-300 font-medium">
                     <span>Calificación de los alumnos:</span>
-                    <strong className="text-slate-900 dark:text-white flex items-center gap-1">
-                      <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
+                    <strong className="text-slate-900 dark:text-slate-100 font-bold flex items-center gap-1">
+                      <Star className="w-4 h-4 fill-amber-500 text-amber-500" />
                       {(typeof selectedCourse.rating === 'number' && !isNaN(selectedCourse.rating) && selectedCourse.rating > 0 ? selectedCourse.rating : 4.9).toFixed(1)} / 5.0
                     </strong>
                   </div>
-                  <div className="flex justify-between text-xs text-slate-600 dark:text-slate-400 font-semibold pt-2 border-t border-slate-200 dark:border-slate-700">
+                  <div className="flex justify-between text-xs sm:text-sm text-slate-600 dark:text-slate-300 font-semibold pt-3 border-t border-slate-200 dark:border-slate-700">
                     <span>Precio total:</span>
-                    <span className="text-slate-900 dark:text-white font-extrabold text-sm">
+                    <span className="text-slate-900 dark:text-white font-extrabold text-sm sm:text-base">
                       {selectedCourse.status === 'upcoming' ? (
                         <span className="text-amber-700 dark:text-amber-400 font-bold">Por anunciar</span>
                       ) : selectedCourse.price === 0 ? (
@@ -428,11 +435,11 @@ export default function CatalogView({
                 </div>
 
                 {selectedCourse.status === 'upcoming' && (
-                  <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200 text-xs">
-                    <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                  <div className="flex items-start gap-3 p-4 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200 text-xs sm:text-sm">
+                    <Clock className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
                     <div>
-                      <p className="font-bold">Curso en preparación (Próximo Lanzamiento)</p>
-                      <p className="text-[11px] text-amber-800/80 dark:text-amber-300/80 mt-0.5 leading-relaxed">
+                      <p className="font-bold text-slate-900 dark:text-amber-100">Curso en preparación (Próximo Lanzamiento)</p>
+                      <p className="text-xs sm:text-sm text-amber-900/90 dark:text-amber-200/90 mt-1 leading-relaxed">
                         El temario y los recursos están en proceso de estructuración. El botón de inscripción y pago se activará automáticamente tan pronto como el curso se publique de manera oficial.
                       </p>
                     </div>
@@ -441,11 +448,11 @@ export default function CatalogView({
 
                 {/* Learn skills list */}
                 <div>
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-400 mb-3">Habilidades que obtendrás</h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <h4 className="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-300 mb-3">Habilidades que obtendrás</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     {selectedCourse.skillsLearned.map((skill, index) => (
-                      <div key={index} className="flex items-start gap-2 text-xs text-slate-600 dark:text-slate-300">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
+                      <div key={index} className="flex items-start gap-2.5 text-xs sm:text-sm text-slate-700 dark:text-slate-200 font-medium">
+                        <CheckCircle2 className="w-4.5 h-4.5 text-emerald-500 flex-shrink-0 mt-0.5" />
                         <span>{skill}</span>
                       </div>
                     ))}
@@ -454,30 +461,30 @@ export default function CatalogView({
 
                 {/* Lessons overview preview */}
                 <div>
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-400 mb-3">Temario ({selectedCourse.lessons.length} Clases)</h4>
-                  <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                  <h4 className="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-300 mb-3">Temario ({selectedCourse.lessons.length} Clases)</h4>
+                  <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
                     {selectedCourse.lessons.map((lesson, idx) => (
-                      <div key={idx} className="flex justify-between text-xs p-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100/70 dark:hover:bg-slate-800 transition-all rounded-lg">
-                        <span className="font-medium truncate max-w-[80%]">{lesson.title}</span>
-                        <span className="text-slate-400 dark:text-slate-400 flex-shrink-0 text-[10px]">{lesson.duration}</span>
+                      <div key={idx} className="flex justify-between items-center text-xs sm:text-sm p-3 bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700 text-slate-800 dark:text-slate-200 hover:bg-slate-100/80 dark:hover:bg-slate-800 transition-all rounded-xl">
+                        <span className="font-medium text-slate-900 dark:text-slate-100 truncate max-w-[80%]">{lesson.title}</span>
+                        <span className="text-slate-500 dark:text-slate-300 font-mono flex-shrink-0 text-xs font-semibold">{lesson.duration}</span>
                       </div>
                     ))}
                   </div>
                 </div>
 
                 {/* CTA actions */}
-                <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex gap-3">
+                <div className="pt-5 border-t border-slate-200 dark:border-slate-800 flex gap-3 sm:gap-4">
                   <button
                     id="back-list-btn"
                     onClick={() => setSelectedCourse(null)}
-                    className="flex-1 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-xs py-2.5 rounded-xl transition-all cursor-pointer"
+                    className="flex-1 border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-xs sm:text-sm py-3 rounded-xl transition-all cursor-pointer"
                   >
                     Volver a la Galería
                   </button>
 
                   {selectedCourse.status === 'upcoming' ? (
-                    <div className="flex-1 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 font-bold text-xs py-2.5 px-3 rounded-xl border border-amber-200 dark:border-amber-800 text-center flex items-center justify-center gap-1.5 shadow-2xs">
-                      <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+                    <div className="flex-1 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 font-bold text-xs sm:text-sm py-3 px-3 rounded-xl border border-amber-200 dark:border-amber-800 text-center flex items-center justify-center gap-1.5 shadow-2xs">
+                      <Clock className="w-4.5 h-4.5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
                       <span>Disponible muy pronto</span>
                     </div>
                   ) : purchasedCourseIds.includes(selectedCourse.id) ? (
@@ -488,18 +495,18 @@ export default function CatalogView({
                         setSelectedCourse(null);
                         onViewCourse(target);
                       }}
-                      className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs py-2.5 rounded-xl transition-all text-center flex items-center justify-center gap-1.5 shadow-md shadow-indigo-150 cursor-pointer"
+                      className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs sm:text-sm py-3 rounded-xl transition-all text-center flex items-center justify-center gap-1.5 shadow-md shadow-indigo-150 cursor-pointer"
                     >
                       <span>Entrar al aula de clase</span>
-                      <ArrowRight className="w-4 h-4" />
+                      <ArrowRight className="w-4.5 h-4.5" />
                     </button>
                   ) : (
                     <button
                       id="acquire-modal-btn"
                       onClick={() => setPurchaseModalOpen(true)}
-                      className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs py-2.5 rounded-xl transition-all text-center shadow-md shadow-indigo-150 flex items-center justify-center gap-1.5 cursor-pointer"
+                      className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs sm:text-sm py-3 rounded-xl transition-all text-center shadow-md shadow-indigo-150 flex items-center justify-center gap-1.5 cursor-pointer"
                     >
-                      <ShoppingBag className="w-4 h-4" />
+                      <ShoppingBag className="w-4.5 h-4.5" />
                       <span>{selectedCourse.price === 0 ? 'Adquirir Gratis' : 'Comprar ahora'}</span>
                     </button>
                   )}
