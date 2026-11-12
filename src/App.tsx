@@ -66,23 +66,49 @@ export default function App() {
     };
     initCourses();
 
-    // 2. Initial Session Restore from LocalStorage
-    const savedToken = localStorage.getItem('courses_student_token');
-    const savedEmail = localStorage.getItem('courses_student_email');
-    const savedName = localStorage.getItem('courses_student_name');
+    // 2. Initial Session Restore from Supabase & LocalStorage
+    const restoreSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session && session.user) {
+          const email = session.user.email || '';
+          const name = session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.user_metadata?.display_name || email.split('@')[0];
+          const token = session.access_token;
 
-    if (savedToken && savedEmail) {
-      setUserToken(savedToken);
-      setUserEmail(savedEmail);
-      setUserName(savedName || savedEmail.split('@')[0]);
-      loadUserSupabaseData(savedEmail);
-    }
+          setUserToken(token);
+          setUserEmail(email);
+          setUserName(name || email.split('@')[0]);
+
+          localStorage.setItem('courses_student_token', token);
+          localStorage.setItem('courses_student_email', email);
+          if (name) {
+            localStorage.setItem('courses_student_name', name);
+          }
+          loadUserSupabaseData(email);
+          return;
+        }
+      } catch (err) {
+        console.warn('Error verificando sesión activa con Supabase:', err);
+      }
+
+      const savedToken = localStorage.getItem('courses_student_token');
+      const savedEmail = localStorage.getItem('courses_student_email');
+      const savedName = localStorage.getItem('courses_student_name');
+
+      if (savedToken && savedEmail) {
+        setUserToken(savedToken);
+        setUserEmail(savedEmail);
+        setUserName(savedName || savedEmail.split('@')[0]);
+        loadUserSupabaseData(savedEmail);
+      }
+    };
+    restoreSession();
 
     // 3. Setup real global Supabase Auth listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session && session.user) {
         const email = session.user.email || '';
-        const name = session.user.user_metadata?.display_name || email.split('@')[0];
+        const name = session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.user_metadata?.display_name || email.split('@')[0];
         const token = session.access_token;
 
         setUserToken(token);

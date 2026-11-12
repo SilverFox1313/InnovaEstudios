@@ -225,6 +225,30 @@ export async function signIn(email: string, password: string): Promise<AuthResul
 }
 
 /**
+ * Initiates Google OAuth authentication via Supabase
+ */
+export async function signInWithGoogle(): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin
+      }
+    });
+
+    if (error) {
+      console.error('Supabase Google OAuth error:', error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    console.error('Unexpected Google OAuth error:', err);
+    return { success: false, error: err?.message || 'Error inesperado al conectar con Google.' };
+  }
+}
+
+/**
  * Establishes absolute session security verification for the Administrator
  */
 export function isSessionVerifiedAdmin(email: string, token: string | null): boolean {

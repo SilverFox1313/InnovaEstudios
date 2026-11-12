@@ -238,10 +238,11 @@ export default function CourseViewer({
               <button
                 id="claim-certificate-header-btn"
                 onClick={() => setShowCertificateModal(true)}
-                className="bg-amber-500 hover:bg-amber-600 font-bold text-white text-xs px-3.5 py-1.5 rounded-lg flex items-center gap-1.5 shadow-sm transition-colors animate-bounce cursor-pointer"
+                className="bg-amber-500 hover:bg-amber-600 font-bold text-white text-xs px-2.5 sm:px-3.5 py-1.5 rounded-lg flex items-center gap-1.5 shadow-sm transition-colors animate-bounce cursor-pointer flex-shrink-0"
               >
-                <Award className="w-4 h-4" />
-                <span>Ver Diploma Oficial</span>
+                <Award className="w-4 h-4 flex-shrink-0" />
+                <span className="inline sm:hidden">Certificado</span>
+                <span className="hidden sm:inline">Ver Diploma Oficial</span>
               </button>
             )}
           </div>
