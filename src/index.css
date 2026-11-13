@@ -11,6 +11,14 @@ html.dark {
   color-scheme: dark;
 }
 
+/* Keep PayPal cross-origin iframe transparent in dark mode by matching its internal light color-scheme */
+.paypal-dark-safe,
+.paypal-dark-safe iframe {
+  color-scheme: light;
+  background-color: transparent !important;
+  border: 0 !important;
+}
+
 @keyframes gradient {
   0% {
     background-position: 0% 50%;

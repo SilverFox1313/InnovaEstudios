@@ -513,11 +513,11 @@ export default function CatalogView({
                     {purchasing ? 'Registrando inscripción...' : 'Inscribirse gratis ahora'}
                   </button>
                 ) : (
-                  <div className="w-full" style={{ minHeight: '120px' }}>
+                  <div className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 paypal-dark-safe flex flex-col gap-3 w-full">
                     <PayPalScriptProvider options={{ "client-id": PAYPAL_CLIENT_ID, currency: "USD" }}>
                       <PayPalButtons
                         disabled={purchasing}
-                        style={{ layout: "vertical", height: 38 }}
+                        style={{ layout: "vertical", height: 40, shape: "rect" }}
                         createOrder={(_data, actions) => {
                           return actions.order.create({
                             intent: "CAPTURE",
