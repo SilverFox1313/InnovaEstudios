@@ -1,6 +1,8 @@
+import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { supabase } from '../supabaseClient';
 
 export interface UserSession {
+  id: string;
   email: string;
   name: string;
   role: 'admin' | 'student';
@@ -10,20 +12,89 @@ export interface UserSession {
 interface AuthResult {
   success: boolean;
   user?: UserSession;
+  requiresEmailConfirmation?: boolean;
   error?: string;
 }
 
-export const ADMIN_EMAILS = [
-  'ahildevert10@gmail.com',
-  'hablandode2@gmail.com'
-];
-export const ADMIN_EMAIL = 'ahildevert10@gmail.com';
-export const ADMIN_PASSWORD = 'AdminSeguro2026!';
+/**
+ * Ensures the authenticated user has a profile row in public.profiles (role defaults to 'student').
+ */
+export async function ensureUserProfile(user: SupabaseUser | null | undefined): Promise<void> {
+  if (!user?.id) return;
 
-export function isAdminEmail(email: string): boolean {
-  if (!email) return false;
-  const normalized = email.trim().toLowerCase();
-  return ADMIN_EMAILS.includes(normalized);
+  try {
+    const { data: existing, error: selectError } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (selectError) {
+      return;
+    }
+
+    if (!existing) {
+      const displayName =
+        user.user_metadata?.full_name ||
+        user.user_metadata?.name ||
+        user.user_metadata?.display_name ||
+        (user.email ? user.email.split('@')[0] : 'Estudiante');
+
+      await supabase.from('profiles').insert({
+        id: user.id,
+        email: user.email?.toLowerCase() || null,
+        full_name: displayName,
+        role: 'student',
+      });
+    }
+  } catch {
+    // Non-blocking if profiles table has not yet been provisioned
+  }
+}
+
+/**
+ * Resolves user role strictly from Supabase server-side data:
+ * 1) JWT app_metadata.role (immutable from client)
+ * 2) public.profiles.role protected by RLS
+ */
+export async function resolveUserRole(user: SupabaseUser | null | undefined): Promise<'admin' | 'student'> {
+  if (!user?.id) return 'student';
+
+  if (user.app_metadata?.role === 'admin') {
+    return 'admin';
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (!error && data?.role === 'admin') {
+      return 'admin';
+    }
+  } catch {
+    // Fail closed to student role
+  }
+
+  return 'student';
+}
+
+/**
+ * Verifies against Supabase Auth + profiles table whether the current session belongs to an admin.
+ */
+export async function verifyAdminAccess(): Promise<boolean> {
+  try {
+    const { data: { session }, error } = await supabase.auth.getSession();
+    if (error || !session?.user) {
+      return false;
+    }
+    const role = await resolveUserRole(session.user);
+    return role === 'admin';
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -32,15 +103,7 @@ export function isAdminEmail(email: string): boolean {
 export async function signUp(email: string, password: string, name: string): Promise<AuthResult> {
   const normalizedEmail = email.trim().toLowerCase();
   const trimmedPassword = password.trim();
-  const isTargetAdmin = isAdminEmail(normalizedEmail);
-  
-  // Master Admin protection
-  if (isTargetAdmin && trimmedPassword !== ADMIN_PASSWORD) {
-    return {
-      success: false,
-      error: 'Para registrarte como administrador debes usar la contraseña maestra designada.'
-    };
-  }
+  const cleanName = name.trim() || normalizedEmail.split('@')[0];
 
   try {
     const { data, error } = await supabase.auth.signUp({
@@ -48,17 +111,13 @@ export async function signUp(email: string, password: string, name: string): Pro
       password: trimmedPassword,
       options: {
         data: {
-          display_name: name.trim() || (isTargetAdmin ? 'Administrador Innova' : normalizedEmail.split('@')[0])
-        }
-      }
+          display_name: cleanName,
+          full_name: cleanName,
+        },
+      },
     });
 
     if (error) {
-      console.log("Supabase signUp response:", error);
-      // If admin already exists in Supabase, sign in immediately
-      if (isTargetAdmin && trimmedPassword === ADMIN_PASSWORD) {
-        return signIn(normalizedEmail, trimmedPassword);
-      }
       let errorMsg = error.message;
       if (errorMsg.toLowerCase().includes('already registered') || errorMsg.toLowerCase().includes('already exists')) {
         errorMsg = 'El correo ya está registrado. Por favor, inicia sesión.';
@@ -67,126 +126,63 @@ export async function signUp(email: string, password: string, name: string): Pro
       }
       return {
         success: false,
-        error: errorMsg
+        error: errorMsg,
       };
     }
 
     if (!data.user) {
-      if (isTargetAdmin) {
-        return {
-          success: true,
-          user: {
-            email: normalizedEmail,
-            name: name.trim() || 'Administrador Innova',
-            role: 'admin',
-            token: 'admin-session-' + Date.now()
-          }
-        };
-      }
       return {
         success: false,
-        error: 'No se pudo crear el usuario.'
+        error: 'No se pudo crear el usuario.',
       };
     }
 
-    const userDisplayName = name.trim() || data.user.user_metadata?.display_name || (isTargetAdmin ? 'Administrador Innova' : normalizedEmail.split('@')[0]);
-    const role = isTargetAdmin ? 'admin' : 'student';
+    if (!data.session) {
+      return {
+        success: true,
+        requiresEmailConfirmation: true,
+      };
+    }
+
+    await ensureUserProfile(data.user);
+    const role = await resolveUserRole(data.user);
+    const userDisplayName =
+      data.user.user_metadata?.full_name ||
+      data.user.user_metadata?.display_name ||
+      cleanName;
 
     return {
       success: true,
       user: {
+        id: data.user.id,
         email: normalizedEmail,
         name: userDisplayName,
         role,
-        token: data.session?.access_token || 'session-' + data.user.id
-      }
+        token: data.session.access_token,
+      },
     };
   } catch (err: any) {
-    console.log("Error in signUp:", err);
-    if (isTargetAdmin && trimmedPassword === ADMIN_PASSWORD) {
-      return {
-        success: true,
-        user: {
-          email: normalizedEmail,
-          name: name.trim() || 'Administrador Innova',
-          role: 'admin',
-          token: 'admin-session-' + Date.now()
-        }
-      };
-    }
     return {
       success: false,
-      error: err.message || 'Error inesperado durante el registro.'
+      error: err?.message || 'Error inesperado durante el registro.',
     };
   }
 }
 
 /**
- * Authenticates users using Supabase Auth with master admin bypass
+ * Authenticates users exclusively via Supabase Auth
  */
 export async function signIn(email: string, password: string): Promise<AuthResult> {
   const normalizedEmail = email.trim().toLowerCase();
   const trimmedPassword = password.trim();
-  const isTargetAdmin = isAdminEmail(normalizedEmail);
 
-  // 1. MASTER ADMIN DIRECT AUTHENTICATION
-  if (isTargetAdmin && trimmedPassword === ADMIN_PASSWORD) {
-    let token = 'admin-session-' + Date.now();
-    try {
-      // Try to sign in or sync with Supabase in the background
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: normalizedEmail,
-        password: trimmedPassword
-      });
-
-      if (!error && data?.session?.access_token) {
-        token = data.session.access_token;
-      } else {
-        // If not registered in Supabase yet, attempt silent register
-        const { data: signUpData } = await supabase.auth.signUp({
-          email: normalizedEmail,
-          password: trimmedPassword,
-          options: {
-            data: { display_name: 'Administrador Innova' }
-          }
-        });
-        if (signUpData?.session?.access_token) {
-          token = signUpData.session.access_token;
-        }
-      }
-    } catch (e) {
-      console.warn("Supabase background auth attempt for admin:", e);
-    }
-
-    // Always succeed for master admin with correct password
-    return {
-      success: true,
-      user: {
-        email: normalizedEmail,
-        name: 'Administrador Innova',
-        role: 'admin',
-        token
-      }
-    };
-  }
-
-  // If trying to access admin email with incorrect password
-  if (isTargetAdmin && trimmedPassword !== ADMIN_PASSWORD) {
-    return {
-      success: false,
-      error: 'Contraseña de administrador incorrecta. Verifica mayúsculas y caracteres especiales.'
-    };
-  }
-
-  // 2. STANDARD SUPABASE STUDENT AUTHENTICATION
   try {
     const { data, error } = await supabase.auth.signInWithPassword({
       email: normalizedEmail,
-      password: trimmedPassword
+      password: trimmedPassword,
     });
 
     if (error) {
-      console.log("Error real de Supabase:", error);
       const msg = error.message;
       if (msg === 'Invalid login credentials' || msg.toLowerCase().includes('invalid')) {
         return { success: false, error: 'Credenciales inválidas. Comprueba tu correo y contraseña.' };
@@ -197,29 +193,34 @@ export async function signIn(email: string, password: string): Promise<AuthResul
       return { success: false, error: msg };
     }
 
-    if (!data.user) {
+    if (!data.user || !data.session) {
       return {
         success: false,
-        error: 'Usuario no encontrado.'
+        error: 'No se pudo iniciar una sesión válida.',
       };
     }
 
-    const userDisplayName = data.user.user_metadata?.display_name || normalizedEmail.split('@')[0];
+    await ensureUserProfile(data.user);
+    const role = await resolveUserRole(data.user);
+    const userDisplayName =
+      data.user.user_metadata?.full_name ||
+      data.user.user_metadata?.display_name ||
+      normalizedEmail.split('@')[0];
 
     return {
       success: true,
       user: {
-        email: normalizedEmail,
+        id: data.user.id,
+        email: data.user.email || normalizedEmail,
         name: userDisplayName,
-        role: 'student',
-        token: data.session?.access_token || 'session-' + data.user.id
-      }
+        role,
+        token: data.session.access_token,
+      },
     };
   } catch (err: any) {
-    console.log("Error real de Supabase:", err);
     return {
       success: false,
-      error: err.message || 'Error inesperado al iniciar sesión.'
+      error: err?.message || 'Error inesperado al iniciar sesión.',
     };
   }
 }
@@ -232,26 +233,16 @@ export async function signInWithGoogle(): Promise<{ success: boolean; error?: st
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: window.location.origin
-      }
+        redirectTo: window.location.origin,
+      },
     });
 
     if (error) {
-      console.error('Supabase Google OAuth error:', error);
       return { success: false, error: error.message };
     }
 
     return { success: true };
   } catch (err: any) {
-    console.error('Unexpected Google OAuth error:', err);
     return { success: false, error: err?.message || 'Error inesperado al conectar con Google.' };
   }
-}
-
-/**
- * Establishes absolute session security verification for the Administrator
- */
-export function isSessionVerifiedAdmin(email: string, token: string | null): boolean {
-  if (!token) return false;
-  return isAdminEmail(email);
 }

@@ -1,11 +1,12 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Course, Lesson, CourseFaq } from '../types';
 import { Plus, BookOpen, Video, ArrowLeft, Image, DollarSign, Tag, Award, CheckCircle2, User, Sparkles, Trash2, Pencil, X, Database, Copy, Check, Eye, Edit3, FileText, HelpCircle, Clock, Star } from 'lucide-react';
-import { isSessionVerifiedAdmin } from '../services/auth';
+import { verifyAdminAccess } from '../services/auth';
 import { getDbStatus } from '../services/db';
 import RichLessonContent from './RichLessonContent';
 
 interface AdminViewProps {
+  isAdmin: boolean;
   courses: Course[];
   onAddCourse: (newCourse: Course) => void;
   onAddLesson: (courseId: string, newLesson: Lesson) => void;
@@ -18,6 +19,7 @@ interface AdminViewProps {
 }
 
 export default function AdminView({
+  isAdmin,
   courses,
   onAddCourse,
   onAddLesson,
@@ -28,33 +30,19 @@ export default function AdminView({
   onDeleteFaq,
   onBackToCatalog
 }: AdminViewProps) {
-  // Robust Session Security Check
-  // Check local storage directly to prevent standard state-injection or devtools bypass
-  const storedEmail = localStorage.getItem('courses_student_email') || '';
-  const storedToken = localStorage.getItem('courses_student_token');
-  const isAuthorized = isSessionVerifiedAdmin(storedEmail, storedToken);
+  const [isAuthorized, setIsAuthorized] = useState<boolean>(isAdmin);
 
-  if (!isAuthorized) {
-    return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-800 flex flex-col items-center justify-center p-6 text-center transition-colors">
-        <div className="bg-white dark:bg-slate-900 border border-rose-100 dark:border-rose-950/60 p-8 rounded-2xl max-w-md shadow-sm space-y-4">
-          <div className="w-12 h-12 bg-rose-50 dark:bg-rose-950/50 text-rose-650 dark:text-rose-400 rounded-xl flex items-center justify-center mx-auto">
-            <Award className="w-6 h-6 text-rose-500" />
-          </div>
-          <h2 className="text-lg font-bold text-slate-900 dark:text-white">Acceso Denegado u No Autorizado</h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-            Esta sección está reservada exclusivamente para administradores verificados. Tu firma de sesión actual es inválida o ha expirado.
-          </p>
-          <button
-            onClick={onBackToCatalog}
-            className="w-full py-2.5 bg-indigo-650 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer"
-          >
-            Volver a la vista del alumno
-          </button>
-        </div>
-      </div>
-    );
-  }
+  useEffect(() => {
+    let active = true;
+    verifyAdminAccess().then((verified) => {
+      if (active) {
+        setIsAuthorized(isAdmin && verified);
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, [isAdmin]);
 
   // Form refs for smooth scrolling and auto-focusing on edit
   const courseFormRef = useRef<HTMLDivElement>(null);
@@ -384,6 +372,28 @@ export default function AdminView({
     setRating('4.9');
     setImageUrl('https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&auto=format&fit=crop&q=80');
   };
+
+  if (!isAuthorized) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-800 flex flex-col items-center justify-center p-6 text-center transition-colors">
+        <div className="bg-white dark:bg-slate-900 border border-rose-100 dark:border-rose-950/60 p-8 rounded-2xl max-w-md shadow-sm space-y-4">
+          <div className="w-12 h-12 bg-rose-50 dark:bg-rose-950/50 text-rose-650 dark:text-rose-400 rounded-xl flex items-center justify-center mx-auto">
+            <Award className="w-6 h-6 text-rose-500" />
+          </div>
+          <h2 className="text-lg font-bold text-slate-900 dark:text-white">Acceso Denegado o No Autorizado</h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+            Esta sección está reservada exclusivamente para administradores verificados en la base de datos.
+          </p>
+          <button
+            onClick={onBackToCatalog}
+            className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer"
+          >
+            Volver a la vista del alumno
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-slate-50 dark:bg-slate-800 min-h-screen py-8 transition-colors">

@@ -9,7 +9,8 @@ const PAYPAL_CLIENT_ID = (import.meta as any).env?.VITE_PAYPAL_CLIENT_ID || 'tes
 interface CatalogViewProps {
   courses: Course[];
   purchasedCourseIds: string[];
-  onPurchaseCourse: (courseId: string) => void;
+  onVerifyPayPalPurchase: (courseId: string, orderId: string) => Promise<{ success: boolean; error?: string }>;
+  onEnrollFreeCourse: (courseId: string) => Promise<{ success: boolean; error?: string }>;
   onViewCourse: (course: Course) => void;
   selectedCategory?: string;
   onSelectCategory?: (category: string) => void;
@@ -18,7 +19,8 @@ interface CatalogViewProps {
 export default function CatalogView({
   courses,
   purchasedCourseIds,
-  onPurchaseCourse,
+  onVerifyPayPalPurchase,
+  onEnrollFreeCourse,
   onViewCourse,
   selectedCategory: externalCategory,
   onSelectCategory
@@ -92,24 +94,55 @@ export default function CatalogView({
     setPurchaseModalOpen(true);
   };
 
-  const handlePaymentApproved = (details: any) => {
-    if (!selectedCourse) return;
+  const handleFreeEnrollment = async () => {
+    if (!selectedCourse || purchasing) return;
     setPurchasing(true);
     setPaypalError('');
-    setPaypalSuccessMessage('¡Pago verificado con PayPal exitosamente! Desbloqueando acceso...');
+    setPaypalSuccessMessage('');
 
-    setTimeout(() => {
-      onPurchaseCourse(selectedCourse.id);
+    const result = await onEnrollFreeCourse(selectedCourse.id);
+    if (!result.success) {
       setPurchasing(false);
-      setPaypalSuccessMessage('¡Inscripción exitosa! Redirigiendo a tu aula virtual...');
-      setTimeout(() => {
-        setPurchaseModalOpen(false);
-        setPaypalSuccessMessage('');
-        if (selectedCourse) {
-          onViewCourse(selectedCourse);
-        }
-      }, 1500);
+      setPaypalError(result.error || 'No se pudo completar la inscripción gratuita.');
+      return;
+    }
+
+    setPurchasing(false);
+    setPaypalSuccessMessage('¡Inscripción exitosa! Redirigiendo a tu aula virtual...');
+    const targetCourse = selectedCourse;
+    setTimeout(() => {
+      setPurchaseModalOpen(false);
+      setPaypalSuccessMessage('');
+      onViewCourse(targetCourse);
     }, 1000);
+  };
+
+  const handleVerifiedPayPalOrder = async (orderId: string) => {
+    if (!selectedCourse || !orderId) {
+      setPaypalError('No se recibió un identificador de orden válido de PayPal.');
+      return;
+    }
+
+    setPurchasing(true);
+    setPaypalError('');
+    setPaypalSuccessMessage('Validando pago con PayPal en el servidor...');
+
+    const result = await onVerifyPayPalPurchase(selectedCourse.id, orderId);
+    if (!result.success) {
+      setPurchasing(false);
+      setPaypalSuccessMessage('');
+      setPaypalError(result.error || 'No se pudo verificar el pago con el servidor.');
+      return;
+    }
+
+    setPurchasing(false);
+    setPaypalSuccessMessage('¡Pago verificado exitosamente! Redirigiendo a tu aula virtual...');
+    const targetCourse = selectedCourse;
+    setTimeout(() => {
+      setPurchaseModalOpen(false);
+      setPaypalSuccessMessage('');
+      onViewCourse(targetCourse);
+    }, 1200);
   };
 
 
@@ -434,8 +467,14 @@ export default function CatalogView({
                 <ShoppingBag className="w-6 h-6" />
               </div>
               
-              <h3 className="text-md font-extrabold text-slate-900 dark:text-white">Verificar orden simulada</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Estás adquiriendo acceso ilimitado para siempre a de estudio interactivo.</p>
+              <h3 className="text-md font-extrabold text-slate-900 dark:text-white">
+                {selectedCourse.price === 0 ? 'Confirmar inscripción gratuita' : 'Checkout seguro con PayPal'}
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                {selectedCourse.price === 0
+                  ? 'Acceso completo al contenido de este curso sin costo.'
+                  : 'El pago se valida directamente en el servidor antes de habilitar tu acceso.'}
+              </p>
 
               <div className="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-lg border border-slate-100 dark:border-slate-700 my-4 text-left">
                 <p className="text-[10px] text-indigo-600 dark:text-indigo-400 font-bold uppercase tracking-wider">Concepto</p>
@@ -463,30 +502,28 @@ export default function CatalogView({
                 </div>
               )}
 
-              <div className="flex items-center gap-2 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 p-2.5 rounded-lg text-[10px] leading-snug border border-amber-100 dark:border-amber-800 text-left mb-6">
-                <AlertCircle className="w-5 h-5 text-amber-650 dark:text-amber-400 flex-shrink-0 mt-0.5" />
-                <span><strong>Pasarela de Pago PayPal:</strong> Integración activa que permite operar en República Dominicana y de manera global. Utiliza los botones inteligentes para sandbox.</span>
-              </div>
-
               <div className="space-y-2.5">
                 {selectedCourse.price === 0 ? (
                   <button
                     id="register-free-course-btn"
-                    onClick={() => handlePaymentApproved({ id: 'FREE-SIMULATED-PAYMENT' })}
-                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-4 rounded-xl text-xs transition-colors shadow-sm"
+                    disabled={purchasing}
+                    onClick={handleFreeEnrollment}
+                    className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white font-bold py-2.5 px-4 rounded-xl text-xs transition-colors shadow-sm cursor-pointer"
                   >
-                    Inscribirse gratis ahora
+                    {purchasing ? 'Registrando inscripción...' : 'Inscribirse gratis ahora'}
                   </button>
                 ) : (
                   <div className="w-full" style={{ minHeight: '120px' }}>
                     <PayPalScriptProvider options={{ "client-id": PAYPAL_CLIENT_ID, currency: "USD" }}>
                       <PayPalButtons
+                        disabled={purchasing}
                         style={{ layout: "vertical", height: 38 }}
-                        createOrder={(data, actions) => {
+                        createOrder={(_data, actions) => {
                           return actions.order.create({
                             intent: "CAPTURE",
                             purchase_units: [
                               {
+                                custom_id: selectedCourse.id,
                                 amount: {
                                   currency_code: "USD",
                                   value: selectedCourse.price.toFixed(2),
@@ -497,36 +534,37 @@ export default function CatalogView({
                           });
                         }}
                         onApprove={async (data, actions) => {
-                          if (actions.order) {
+                          if (!actions.order) {
+                            setPaypalError('No se pudo capturar la orden de PayPal de forma segura.');
+                            return;
+                          }
+                          try {
                             const details = await actions.order.capture();
-                            handlePaymentApproved(details);
-                          } else {
-                            handlePaymentApproved({ id: 'SIMULATED-PAYMENT' });
+                            const orderId = details?.id || data.orderID;
+                            if (!orderId) {
+                              setPaypalError('PayPal no devolvió un identificador de orden válido.');
+                              return;
+                            }
+                            await handleVerifiedPayPalOrder(orderId);
+                          } catch (err: any) {
+                            console.error('Error al capturar orden de PayPal:', err);
+                            setPaypalError(err?.message || 'Error al capturar el pago en PayPal.');
                           }
                         }}
                         onError={(err) => {
                           console.error("PayPal Option error:", err);
-                          setPaypalError("Error al iniciar PayPal. ¿Quieres simular aprobación rápida por motivos de prueba local?");
+                          setPaypalError("No se pudo procesar el pago con PayPal. Verifica la configuración o intenta más tarde.");
                         }}
                       />
                     </PayPalScriptProvider>
-                    
-                    {paypalError && (
-                      <button
-                        type="button"
-                        onClick={() => handlePaymentApproved({ id: 'DEV-SIMULATED' })}
-                        className="mt-2 w-full py-1.5 bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 font-semibold rounded-lg text-[11px] border border-indigo-150 dark:border-indigo-800 transition-all text-center"
-                      >
-                        Simular Aprobación Mock de Depuración
-                      </button>
-                    )}
                   </div>
                 )}
 
                 <button
                   id="cancel-payment-btn"
+                  disabled={purchasing}
                   onClick={() => setPurchaseModalOpen(false)}
-                  className="w-full py-2 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl text-xs font-bold text-slate-650 dark:text-slate-300 transition-all cursor-pointer"
+                  className="w-full py-2 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl text-xs font-bold text-slate-650 dark:text-slate-300 transition-all cursor-pointer disabled:opacity-60"
                 >
                   Cancelar y volver
                 </button>

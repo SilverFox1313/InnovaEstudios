@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Mail, Lock, User, GraduationCap, ShieldCheck, Sparkles, Eye, EyeOff, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { motion } from 'motion/react';
-import { signIn, signUp, signInWithGoogle, isAdminEmail, ADMIN_EMAIL, ADMIN_PASSWORD } from '../services/auth';
+import { signIn, signUp, signInWithGoogle } from '../services/auth';
 import { supabase } from '../supabaseClient';
 
 interface LoginViewProps {
@@ -41,9 +41,6 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
   const [successMessage, setSuccessMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-
-  // Check if current runtime is development mode
-  const isDev = Boolean((import.meta as any).env?.DEV);
 
   const handleGoogleSignIn = async () => {
     if (loading || googleLoading) return;
@@ -99,13 +96,12 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
         ? await signIn(cleanEmail, cleanPassword)
         : await signUp(cleanEmail, cleanPassword, name);
         
-      if (result.success && result.user) {
-        // Save session structures to localStorage
-        localStorage.setItem('courses_student_token', result.user.token);
-        localStorage.setItem('courses_student_email', result.user.email);
-        localStorage.setItem('courses_student_name', result.user.name);
-        
-        // Inform parent application of successful login
+      if (result.requiresEmailConfirmation) {
+        setSuccessMessage('Cuenta creada correctamente. Revisa tu correo electrónico para confirmar tu cuenta e iniciar sesión.');
+        setIsLogin(true);
+        setPassword('');
+        setConfirmPassword('');
+      } else if (result.success && result.user) {
         onLoginSuccess(result.user.email, result.user.name, result.user.token);
       } else {
         setError(mapFriendlyAuthError(result.error || 'Credenciales inválidas.'));
@@ -500,6 +496,20 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
                 </motion.div>
               )}
 
+              {successMessage && (
+                <div 
+                  role="status" 
+                  aria-live="polite" 
+                  className="bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 text-xs p-3.5 rounded-xl flex items-start gap-2.5 border border-emerald-200 dark:border-emerald-800/60 shadow-xs animate-fadeIn"
+                >
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0 mt-0.5" />
+                  <div className="leading-snug">
+                    <span className="font-semibold block mb-0.5">Cuenta registrada</span>
+                    <span>{successMessage}</span>
+                  </div>
+                </div>
+              )}
+
               {error && (
                 <div 
                   role="alert" 
@@ -512,13 +522,6 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
                     <span className="font-semibold block mb-0.5">Atención</span>
                     <span>{error}</span>
                   </div>
-                </div>
-              )}
-
-              {isAdminEmail(email) && (
-                <div className="bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 text-xs p-3 rounded-xl flex items-center gap-2 border border-amber-200/70 dark:border-amber-800/60 shadow-xs">
-                  <ShieldCheck className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
-                  <span>Modo Administrador detectado para este correo.</span>
                 </div>
               )}
 
@@ -535,30 +538,12 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
                       <span>{isLogin ? 'Validando sesión...' : 'Registrando cuenta...'}</span>
                     </>
                   ) : isLogin ? (
-                    isAdminEmail(email) ? 'Ingresar como Administrador 🛠️' : 'Ingresar al Aula'
+                    'Ingresar al Aula'
                   ) : (
                     'Registrar Cuenta'
                   )}
                 </button>
               </div>
-
-              {/* Quick autofill helper for easy access (SOLO EN MODO DESARROLLO) */}
-              {isLogin && isDev && (
-                <div className="pt-2 text-center" id="dev-admin-autofill-container">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEmail(ADMIN_EMAIL);
-                      setPassword(ADMIN_PASSWORD);
-                      setError('');
-                    }}
-                    className="inline-flex items-center gap-1.5 text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 font-medium py-1 px-2.5 rounded-lg hover:bg-indigo-50/60 dark:hover:bg-indigo-950/60 transition-colors cursor-pointer"
-                  >
-                    <Sparkles className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400" />
-                    <span>Rellenar credenciales de Admin</span>
-                  </button>
-                </div>
-              )}
             </form>
           )}
 

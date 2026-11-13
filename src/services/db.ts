@@ -458,13 +458,18 @@ export async function deleteLessonFromSupabase(lessonId: string): Promise<{ succ
 }
 
 /**
- * 6. USER PURCHASES: Load purchased courses for a student from Supabase table 'user_purchases'
+ * 6. USER PURCHASES: Load purchased courses for the authenticated student from Supabase table 'user_purchases'
  */
 export async function fetchPurchasesFromSupabase(userEmail: string): Promise<string[]> {
   if (!userEmail) return [];
   const normalizedEmail = userEmail.trim().toLowerCase();
 
   try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) {
+      return [];
+    }
+
     const { data, error } = await supabase
       .from('user_purchases')
       .select('course_id')
@@ -472,51 +477,133 @@ export async function fetchPurchasesFromSupabase(userEmail: string): Promise<str
 
     if (error) {
       console.warn('Error consultando compras en Supabase:', error.message);
-      // Fallback to localStorage
-      const local = localStorage.getItem(`purchases_${normalizedEmail}`);
-      return local ? JSON.parse(local) : [];
+      return [];
     }
 
-    const courseIds = (data || []).map((row: any) => row.course_id);
-    localStorage.setItem(`purchases_${normalizedEmail}`, JSON.stringify(courseIds));
-    return courseIds;
+    return (data || []).map((row: any) => row.course_id);
   } catch (err) {
     console.error('Fallo al obtener compras de Supabase:', err);
-    const local = localStorage.getItem(`purchases_${normalizedEmail}`);
-    return local ? JSON.parse(local) : [];
+    return [];
   }
 }
 
 /**
- * 7. USER PURCHASES: Record a new purchase in Supabase table 'user_purchases'
+ * 7. USER PURCHASES (PAID): Verify PayPal order strictly on the server or Supabase Edge Function before unlocking access
  */
-export async function recordPurchaseInSupabase(
-  userEmail: string, 
-  courseId: string, 
-  amountPaid: number = 0,
-  paymentMethod: string = 'paypal'
-): Promise<boolean> {
-  if (!userEmail || !courseId) return false;
-  const normalizedEmail = userEmail.trim().toLowerCase();
+export async function verifyPayPalPurchaseOnServer(
+  courseId: string,
+  orderId: string
+): Promise<{ success: boolean; error?: string }> {
+  if (!courseId || !orderId) {
+    return { success: false, error: 'Faltan datos de la orden de PayPal.' };
+  }
 
   try {
-    await ensureCourseExists(courseId);
-
-    const { error } = await supabase.from('user_purchases').upsert({
-      user_email: normalizedEmail,
-      course_id: courseId,
-      amount_paid: amountPaid,
-      payment_method: paymentMethod,
-      purchased_at: new Date().toISOString()
-    }, { onConflict: 'user_email,course_id' });
-
-    if (error) {
-      console.warn('Aviso: no se pudo persistir compra en Supabase user_purchases:', error.message);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) {
+      return { success: false, error: 'Tu sesión expiró. Inicia sesión nuevamente para confirmar tu compra.' };
     }
-    return !error;
-  } catch (err) {
-    console.error('Error guardando compra en Supabase:', err);
-    return false;
+
+    const res = await fetch('/api/payments/verify-paypal', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ courseId, orderId }),
+    });
+
+    if (res.status === 404) {
+      // Fallback to Supabase Edge Function if deployed without Express backend
+      const { data, error } = await supabase.functions.invoke('verify-paypal-purchase', {
+        body: { courseId, orderId },
+      });
+      if (error || !data?.success) {
+        return {
+          success: false,
+          error: data?.error || error?.message || 'No se pudo validar el pago en el servidor.',
+        };
+      }
+      return { success: true };
+    }
+
+    const payload = await res.json().catch(() => ({}));
+    if (!res.ok || !payload?.success) {
+      return {
+        success: false,
+        error: payload?.error || 'No se pudo verificar el pago de PayPal en el servidor.',
+      };
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    console.error('Error verificando compra PayPal en servidor:', err);
+    return {
+      success: false,
+      error: err?.message || 'Error de conexión al validar el pago con el servidor.',
+    };
+  }
+}
+
+/**
+ * 7b. USER PURCHASES (FREE): Enroll in a strictly free course (price === 0 verified on server / RLS)
+ */
+export async function enrollFreeCourseOnServer(
+  courseId: string
+): Promise<{ success: boolean; error?: string }> {
+  if (!courseId) {
+    return { success: false, error: 'Curso inválido.' };
+  }
+
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token || !session.user?.email) {
+      return { success: false, error: 'Debes iniciar sesión para inscribirte.' };
+    }
+
+    const res = await fetch('/api/purchases/free', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ courseId }),
+    });
+
+    if (res.status === 404) {
+      // Direct RLS-enforced fallback for strictly price = 0 courses
+      const { error } = await supabase.from('user_purchases').upsert(
+        {
+          user_id: session.user.id,
+          user_email: session.user.email.toLowerCase(),
+          course_id: courseId,
+          amount_paid: 0,
+          payment_method: 'free',
+          purchased_at: new Date().toISOString(),
+        },
+        { onConflict: 'user_email,course_id' }
+      );
+      if (error) {
+        return { success: false, error: error.message };
+      }
+      return { success: true };
+    }
+
+    const payload = await res.json().catch(() => ({}));
+    if (!res.ok || !payload?.success) {
+      return {
+        success: false,
+        error: payload?.error || 'No se pudo completar la inscripción gratuita.',
+      };
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    console.error('Error en inscripción gratuita:', err);
+    return {
+      success: false,
+      error: err?.message || 'Error de red al inscribirse en el curso gratuito.',
+    };
   }
 }
 

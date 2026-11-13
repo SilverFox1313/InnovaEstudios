@@ -13,13 +13,14 @@ import {
   deleteCourseFromSupabase,
   upsertLessonInSupabase,
   fetchPurchasesFromSupabase,
-  recordPurchaseInSupabase,
+  verifyPayPalPurchaseOnServer,
+  enrollFreeCourseOnServer,
   fetchProgressFromSupabase,
   toggleProgressInSupabase,
   upsertFaqInSupabase,
   deleteFaqFromSupabase
 } from './services/db';
-import { isSessionVerifiedAdmin } from './services/auth';
+import { ensureUserProfile, resolveUserRole } from './services/auth';
 import { supabase } from './supabaseClient';
 import { addNotification } from './services/notifications';
 
@@ -27,6 +28,7 @@ export default function App() {
   const [userToken, setUserToken] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string>('');
   const [userName, setUserName] = useState<string>('');
+  const [isUserAdmin, setIsUserAdmin] = useState<boolean>(false);
   
   // Current active view state: 'catalog' | 'viewer' | 'admin'
   const [currentView, setCurrentView] = useState<'catalog' | 'viewer' | 'admin'>('catalog');
@@ -57,6 +59,9 @@ export default function App() {
 
   // Load courses and login state on initial load
   useEffect(() => {
+    // Clean up any legacy synthetic token keys
+    localStorage.removeItem('courses_student_token');
+
     // 1. Initial Courses Setup directly from Supabase
     const initCourses = async () => {
       setLoadingCourses(true);
@@ -66,40 +71,35 @@ export default function App() {
     };
     initCourses();
 
-    // 2. Initial Session Restore from Supabase & LocalStorage
+    const applyAuthenticatedSession = async (session: any) => {
+      if (!session?.user) return;
+      const email = session.user.email || '';
+      const name =
+        session.user.user_metadata?.full_name ||
+        session.user.user_metadata?.name ||
+        session.user.user_metadata?.display_name ||
+        email.split('@')[0];
+      const token = session.access_token;
+
+      setUserToken(token);
+      setUserEmail(email);
+      setUserName(name || email.split('@')[0]);
+
+      await ensureUserProfile(session.user);
+      const role = await resolveUserRole(session.user);
+      setIsUserAdmin(role === 'admin');
+      loadUserSupabaseData(email);
+    };
+
+    // 2. Initial Session Restore strictly from Supabase Auth
     const restoreSession = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (session && session.user) {
-          const email = session.user.email || '';
-          const name = session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.user_metadata?.display_name || email.split('@')[0];
-          const token = session.access_token;
-
-          setUserToken(token);
-          setUserEmail(email);
-          setUserName(name || email.split('@')[0]);
-
-          localStorage.setItem('courses_student_token', token);
-          localStorage.setItem('courses_student_email', email);
-          if (name) {
-            localStorage.setItem('courses_student_name', name);
-          }
-          loadUserSupabaseData(email);
-          return;
+          await applyAuthenticatedSession(session);
         }
       } catch (err) {
         console.warn('Error verificando sesión activa con Supabase:', err);
-      }
-
-      const savedToken = localStorage.getItem('courses_student_token');
-      const savedEmail = localStorage.getItem('courses_student_email');
-      const savedName = localStorage.getItem('courses_student_name');
-
-      if (savedToken && savedEmail) {
-        setUserToken(savedToken);
-        setUserEmail(savedEmail);
-        setUserName(savedName || savedEmail.split('@')[0]);
-        loadUserSupabaseData(savedEmail);
       }
     };
     restoreSession();
@@ -107,31 +107,16 @@ export default function App() {
     // 3. Setup real global Supabase Auth listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session && session.user) {
-        const email = session.user.email || '';
-        const name = session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.user_metadata?.display_name || email.split('@')[0];
-        const token = session.access_token;
-
-        setUserToken(token);
-        setUserEmail(email);
-        setUserName(name || email.split('@')[0]);
-
-        // Sync token in localStorage
-        localStorage.setItem('courses_student_token', token);
-        localStorage.setItem('courses_student_email', email);
-        if (name) {
-          localStorage.setItem('courses_student_name', name);
-        }
-
-        // Fetch user purchases and progress from Supabase
-        loadUserSupabaseData(email);
+        applyAuthenticatedSession(session);
       } else if (_event === 'SIGNED_OUT') {
-        // Explicit logout event
         setUserToken(null);
         setUserEmail('');
         setUserName('');
+        setIsUserAdmin(false);
         setPurchasedCourseIds([]);
         setCompletedLessonIds([]);
-        
+        setCurrentView('catalog');
+
         localStorage.removeItem('courses_student_token');
         localStorage.removeItem('courses_student_email');
         localStorage.removeItem('courses_student_name');
@@ -149,7 +134,15 @@ export default function App() {
     setUserName(name);
     setCurrentView('catalog');
 
-    // Load purchases & progress from Supabase
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) {
+      await ensureUserProfile(session.user);
+      const role = await resolveUserRole(session.user);
+      setIsUserAdmin(role === 'admin');
+    } else {
+      setIsUserAdmin(false);
+    }
+
     await loadUserSupabaseData(email);
   };
 
@@ -164,23 +157,28 @@ export default function App() {
     localStorage.removeItem('courses_student_email');
     localStorage.removeItem('courses_student_name');
     
-    // Reset React state values
     setUserToken(null);
     setUserEmail('');
     setUserName('');
+    setIsUserAdmin(false);
     setPurchasedCourseIds([]);
     setCompletedLessonIds([]);
     setActiveCourse(null);
     setCurrentView('catalog');
   };
 
-  // 1. PURCHASE: Save directly to Supabase user_purchases
-  const handlePurchaseCourse = async (courseId: string) => {
-    const updated = [...purchasedCourseIds, courseId];
-    setPurchasedCourseIds(updated);
-    if (userEmail) {
-      await recordPurchaseInSupabase(userEmail, courseId);
+  // 1a. PAID PURCHASE: Verified on server with PayPal API before granting access
+  const handleVerifyPayPalPurchase = async (
+    courseId: string,
+    orderId: string
+  ): Promise<{ success: boolean; error?: string }> => {
+    const res = await verifyPayPalPurchaseOnServer(courseId, orderId);
+    if (!res.success) {
+      return res;
+    }
 
+    setPurchasedCourseIds((prev) => (prev.includes(courseId) ? prev : [...prev, courseId]));
+    if (userEmail) {
       const targetCourse = coursesList.find((c) => c.id === courseId);
       const courseTitle = targetCourse ? targetCourse.title : 'tu curso seleccionado';
       addNotification(userEmail, {
@@ -190,6 +188,30 @@ export default function App() {
         courseId
       });
     }
+    return { success: true };
+  };
+
+  // 1b. FREE ENROLLMENT: Verified price === 0 on server / RLS before granting access
+  const handleEnrollFreeCourse = async (
+    courseId: string
+  ): Promise<{ success: boolean; error?: string }> => {
+    const res = await enrollFreeCourseOnServer(courseId);
+    if (!res.success) {
+      return res;
+    }
+
+    setPurchasedCourseIds((prev) => (prev.includes(courseId) ? prev : [...prev, courseId]));
+    if (userEmail) {
+      const targetCourse = coursesList.find((c) => c.id === courseId);
+      const courseTitle = targetCourse ? targetCourse.title : 'tu curso seleccionado';
+      addNotification(userEmail, {
+        type: 'purchase',
+        title: '¡Inscripción confirmada!',
+        message: `Te has inscrito gratuitamente en "${courseTitle}". Ya tienes acceso a todos sus capítulos y contenidos.`,
+        courseId
+      });
+    }
+    return { success: true };
   };
 
   // 2. PROGRESS: Save directly to Supabase lesson_progress
@@ -425,13 +447,10 @@ export default function App() {
     await deleteFaqFromSupabase(faqId, courseId);
   };
 
-  // If there is no simulated session active, render the Authorization form
+  // If there is no active Supabase session, render the Authorization form
   if (!userToken) {
     return <LoginView onLoginSuccess={handleLoginSuccess} />;
   }
-
-  // Admin access validation
-  const isUserAdmin = isSessionVerifiedAdmin(userEmail, userToken);
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 flex flex-col font-sans selection:bg-indigo-100 dark:selection:bg-indigo-900 selection:text-indigo-900 dark:selection:text-indigo-100 transition-colors duration-200">
@@ -448,7 +467,11 @@ export default function App() {
         onGoHome={handleGoHome}
         onGoToLearning={handleGoToLearning}
         showAdminBtn={isUserAdmin}
-        onGoToAdmin={() => setCurrentView('admin')}
+        onGoToAdmin={() => {
+          if (isUserAdmin) {
+            setCurrentView('admin');
+          }
+        }}
         onNavigateToCourse={(courseId) => {
           const target = coursesList.find((c) => c.id === courseId);
           if (target) {
@@ -461,17 +484,9 @@ export default function App() {
 
       {/* Main Container Sandbox Views */}
       <main className="flex-1">
-        {currentView === 'catalog' ? (
-          <CatalogView
-            courses={coursesList}
-            purchasedCourseIds={purchasedCourseIds}
-            onPurchaseCourse={handlePurchaseCourse}
-            onViewCourse={handleViewCourse}
-            selectedCategory={catalogCategory}
-            onSelectCategory={setCatalogCategory}
-          />
-        ) : currentView === 'admin' ? (
+        {currentView === 'admin' && isUserAdmin ? (
           <AdminView
+            isAdmin={isUserAdmin}
             courses={coursesList}
             onAddCourse={handleAddCourse}
             onAddLesson={handleAddLesson}
@@ -482,17 +497,25 @@ export default function App() {
             onDeleteFaq={handleDeleteFaq}
             onBackToCatalog={handleGoHome}
           />
+        ) : currentView === 'viewer' && activeCourse ? (
+          <CourseViewer
+            course={activeCourse}
+            completedLessonIds={completedLessonIds}
+            onToggleLessonCompleted={handleToggleLessonCompleted}
+            onBackToCatalog={handleGoHome}
+            userName={userName}
+            userEmail={userEmail}
+          />
         ) : (
-          activeCourse && (
-            <CourseViewer
-              course={activeCourse}
-              completedLessonIds={completedLessonIds}
-              onToggleLessonCompleted={handleToggleLessonCompleted}
-              onBackToCatalog={handleGoHome}
-              userName={userName}
-              userEmail={userEmail}
-            />
-          )
+          <CatalogView
+            courses={coursesList}
+            purchasedCourseIds={purchasedCourseIds}
+            onVerifyPayPalPurchase={handleVerifyPayPalPurchase}
+            onEnrollFreeCourse={handleEnrollFreeCourse}
+            onViewCourse={handleViewCourse}
+            selectedCategory={catalogCategory}
+            onSelectCategory={setCatalogCategory}
+          />
         )}
       </main>
 
