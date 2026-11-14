@@ -173,9 +173,9 @@ export default function CatalogView({
             {/* Value proposition badges */}
             <div className="flex flex-wrap items-center gap-3 text-xs font-semibold">
               {/* Badge 1: Acceso Inmediato y Vitalicio */}
-              <div className="flex items-center gap-2 bg-slate-900/60 backdrop-blur-md text-emerald-300 px-4 py-2 rounded-full border border-emerald-500/30 transition-all hover:bg-slate-900/80">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span>Acceso Inmediato y Vitalicio</span>
+              <div className="flex items-center gap-2 bg-slate-900/60 backdrop-blur-md text-emerald-200 dark:text-emerald-200 px-4 py-2 rounded-full border border-emerald-400/40 transition-all hover:bg-slate-900/80 shadow-xs">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-sm shadow-emerald-400"></span>
+                <span className="font-bold tracking-wide">Acceso Inmediato y Vitalicio</span>
               </div>
               
               {/* Badge 2: Contenido Teórico y Práctico */}

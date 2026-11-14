@@ -374,12 +374,12 @@ export default function CourseViewer({
                 <div className="border-b border-slate-200/80 dark:border-slate-800 pb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="space-y-2">
                     <div className="flex flex-wrap items-center gap-2.5">
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/60 shadow-2xs">
-                        <BookOpen className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                      <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-extrabold bg-blue-100/90 dark:bg-blue-900/60 text-blue-900 dark:text-blue-200 border border-blue-300/80 dark:border-blue-700/80 shadow-2xs">
+                        <BookOpen className="w-3.5 h-3.5 text-blue-700 dark:text-blue-300" />
                         <span>Capítulo {currentLessonIndex + 1} de {course.lessons.length}</span>
                       </span>
-                      <span className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 font-semibold flex items-center gap-1.5">
-                        <Clock className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+                      <span className="text-xs sm:text-sm text-slate-800 dark:text-slate-200 font-bold flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700">
+                        <Clock className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                         <span>{activeLesson?.duration || '8 min de lectura'}</span>
                       </span>
                     </div>
@@ -413,8 +413,8 @@ export default function CourseViewer({
                   <RichLessonContent content={activeLesson ? activeLesson.content : ''} />
                 </div>
 
-                {/* Bottom chapter reading navigation */}
-                <div className="pt-6 border-t border-slate-200/80 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-50/70 dark:bg-slate-800/50 p-4 rounded-2xl">
+                {/* Bottom chapter reading navigation with transparent container & aligned items */}
+                <div className="pt-3 border-t border-slate-200/80 dark:border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-2.5 bg-transparent px-1 py-2">
                   <div>
                     {prevLesson ? (
                       <button
@@ -422,22 +422,22 @@ export default function CourseViewer({
                           setActiveLesson(prevLesson);
                           window.scrollTo({ top: 0, behavior: 'smooth' });
                         }}
-                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800 hover:shadow-xs border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition-all cursor-pointer"
+                        className="inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold text-slate-700 dark:text-slate-200 bg-white/70 dark:bg-slate-800/70 hover:bg-white dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 backdrop-blur-md shadow-2xs transition-all cursor-pointer"
                       >
-                        <ChevronLeft className="w-4 h-4" />
-                        <span>Capítulo Anterior</span>
+                        <ChevronLeft className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" />
+                        <span>Anterior</span>
                       </button>
                     ) : <div />}
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center justify-end gap-2 w-full sm:w-auto">
                     {!isCompleted && nextLesson && (
                       <button
                         onClick={handleMarkAndNext}
-                        className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm rounded-xl shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
+                        className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-emerald-600/85 hover:bg-emerald-600 dark:bg-emerald-600/75 dark:hover:bg-emerald-600 text-white font-bold text-xs rounded-lg shadow-xs backdrop-blur-md border border-emerald-500/30 transition-all cursor-pointer"
                       >
-                        <CheckCircle2 className="w-4 h-4" />
-                        <span>Completar y siguiente capítulo</span>
+                        <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                        <span>Completar</span>
                       </button>
                     )}
 
@@ -447,10 +447,10 @@ export default function CourseViewer({
                           setActiveLesson(nextLesson);
                           window.scrollTo({ top: 0, behavior: 'smooth' });
                         }}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-xs transition-all cursor-pointer"
+                        className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-600/85 hover:bg-blue-600 dark:bg-blue-600/75 dark:hover:bg-blue-600 text-white shadow-xs backdrop-blur-md border border-blue-500/30 transition-all cursor-pointer"
                       >
-                        <span>Siguiente Capítulo</span>
-                        <ChevronRight className="w-4 h-4" />
+                        <span>Siguiente</span>
+                        <ChevronRight className="w-3.5 h-3.5 shrink-0" />
                       </button>
                     )}
                   </div>
@@ -504,12 +504,12 @@ export default function CourseViewer({
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5 mb-0.5">
                           {lesson.videoUrl && lesson.videoUrl.trim() !== '' ? (
-                            <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-bold">
-                              <Video className="w-3 h-3" /> Video
+                            <span className="inline-flex items-center gap-1 text-[10px] px-2.5 py-0.5 rounded-md bg-indigo-100 dark:bg-indigo-900/80 text-indigo-800 dark:text-indigo-200 font-extrabold border border-indigo-200 dark:border-indigo-700/60">
+                              <Video className="w-3 h-3 text-indigo-600 dark:text-indigo-300" /> Video
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-bold">
-                              <BookOpen className="w-3 h-3" /> Lectura
+                            <span className="inline-flex items-center gap-1 text-[10px] px-2.5 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-900/80 text-emerald-800 dark:text-emerald-200 font-extrabold border border-emerald-200 dark:border-emerald-700/60">
+                              <BookOpen className="w-3 h-3 text-emerald-600 dark:text-emerald-300" /> Lectura
                             </span>
                           )}
                           <span className="text-xs text-slate-500 dark:text-slate-400 font-mono font-medium">
@@ -545,12 +545,12 @@ export default function CourseViewer({
                   onClick={() => setActiveTab('notes')}
                   className={`flex-1 py-3.5 text-xs sm:text-sm font-bold transition-colors cursor-pointer ${
                     activeTab === 'notes'
-                      ? 'border-b-2 border-indigo-600 text-indigo-700 dark:text-indigo-400 bg-white dark:bg-slate-900'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                      ? 'border-b-2 border-indigo-600 text-indigo-900 dark:text-indigo-200 bg-white dark:bg-slate-900 font-extrabold'
+                      : 'text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
                   <span className="flex items-center justify-center gap-1.5">
-                    <FileText className="w-4 h-4" />
+                    <FileText className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                     Mis Apuntes Locales ({savedNotes.length})
                   </span>
                 </button>
@@ -559,12 +559,12 @@ export default function CourseViewer({
                   onClick={() => setActiveTab('faq')}
                   className={`flex-1 py-3.5 text-xs sm:text-sm font-bold transition-colors cursor-pointer ${
                     activeTab === 'faq'
-                      ? 'border-b-2 border-indigo-600 text-indigo-700 dark:text-indigo-400 bg-white dark:bg-slate-900'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                      ? 'border-b-2 border-indigo-600 text-indigo-900 dark:text-indigo-200 bg-white dark:bg-slate-900 font-extrabold'
+                      : 'text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
                   <span className="flex items-center justify-center gap-1.5">
-                    <BookOpen className="w-4 h-4" />
+                    <BookOpen className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                     Preguntas Frecuentes
                   </span>
                 </button>
@@ -702,13 +702,10 @@ export default function CourseViewer({
 
                 {activeTab === 'faq' && (
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between mb-2 pb-2 border-b border-slate-200/80 dark:border-slate-800">
+                    <div className="flex items-center justify-between gap-2 mb-3 pb-2.5 border-b border-slate-200/80 dark:border-slate-800">
                       <span className="text-xs font-extrabold text-slate-800 dark:text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
-                        <HelpCircle className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                        <span>Preguntas Frecuentes del Curso</span>
-                      </span>
-                      <span className="text-[11px] font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/80 border border-indigo-150 dark:border-indigo-800/80 px-2.5 py-0.5 rounded-full">
-                        {effectiveFaqs.length} resoluciones
+                        <HelpCircle className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
+                        <span className="leading-snug">Preguntas Frecuentes del Curso</span>
                       </span>
                     </div>
 
