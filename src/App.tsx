@@ -13,6 +13,7 @@ import {
   deleteCourseFromSupabase,
   upsertLessonInSupabase,
   reorderLessonsInSupabase,
+  syncLinuxCourseLessonsToSupabase,
   fetchPurchasesFromSupabase,
   verifyPayPalPurchaseOnServer,
   enrollFreeCourseOnServer,
@@ -88,7 +89,11 @@ export default function App() {
 
       await ensureUserProfile(session.user);
       const role = await resolveUserRole(session.user);
-      setIsUserAdmin(role === 'admin');
+      const adminFlag = role === 'admin';
+      setIsUserAdmin(adminFlag);
+      if (adminFlag) {
+        syncLinuxCourseLessonsToSupabase();
+      }
       loadUserSupabaseData(email);
     };
 

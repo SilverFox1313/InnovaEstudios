@@ -1,6 +1,12 @@
 import { supabase } from '../supabaseClient';
 import { Course, Lesson, CourseFaq } from '../types';
 import { DEFAULT_COURSE_IMAGE, normalizeImageUrl } from '../utils/imageUrl';
+import {
+  LINUX_COURSE_ID,
+  LINUX_COURSE_LESSONS,
+  needsLinuxLessonRefresh,
+  resolveLinuxLessonOverride
+} from '../data/linuxCourseContent';
 
 export interface DbStatus {
   isLiveDb: boolean;
@@ -55,14 +61,21 @@ function mapRowToCourse(row: any, lessons: any[] = [], rawFaqs: any[] = []): Cou
       if (timeA !== timeB) return timeA - timeB;
       return String(a.id).localeCompare(String(b.id));
     })
-    .map((l: any, idx: number) => ({
-      id: l.id,
-      title: l.title,
-      duration: l.duration || '10:00',
-      videoUrl: l.video_url ?? l.videoUrl ?? '',
-      content: l.content || '',
-      orderIndex: typeof l.order_index === 'number' ? l.order_index : idx
-    }));
+    .map((l: any, idx: number) =>
+      resolveLinuxLessonOverride(
+        row.id,
+        row.title || '',
+        {
+          id: l.id,
+          title: l.title,
+          duration: l.duration || '10:00',
+          videoUrl: l.video_url ?? l.videoUrl ?? '',
+          content: l.content || '',
+          orderIndex: typeof l.order_index === 'number' ? l.order_index : idx
+        },
+        idx
+      )
+    );
 
   let mappedFaqs: CourseFaq[] = [];
   const dbFaqs = rawFaqs || row.course_faqs || row.faqs || [];
@@ -494,6 +507,46 @@ export async function reorderLessonsInSupabase(
   } catch (err: any) {
     console.error('Error de red reordenando lecciones en Supabase:', err);
     return { success: false, error: err?.message };
+  }
+}
+
+/**
+ * 4c. LESSONS: Persists the full 10 Linux lessons into Supabase when an authenticated admin session is active
+ * and the database rows still hold placeholder content.
+ */
+export async function syncLinuxCourseLessonsToSupabase(): Promise<void> {
+  try {
+    const { data: existingLessons, error } = await supabase
+      .from('lessons')
+      .select('id, content, order_index')
+      .eq('course_id', LINUX_COURSE_ID);
+
+    if (error || !existingLessons || existingLessons.length === 0) return;
+
+    const toUpdate = existingLessons.filter((row: any) =>
+      needsLinuxLessonRefresh(row.content)
+    );
+
+    if (toUpdate.length === 0) return;
+
+    await Promise.all(
+      toUpdate.map((row: any) => {
+        const seed =
+          LINUX_COURSE_LESSONS.find((s) => s.id === row.id) ||
+          LINUX_COURSE_LESSONS.find((s) => s.orderIndex === row.order_index);
+        if (!seed) return Promise.resolve();
+        return supabase
+          .from('lessons')
+          .update({
+            duration: seed.duration,
+            content: seed.content
+          })
+          .eq('id', row.id)
+          .eq('course_id', LINUX_COURSE_ID);
+      })
+    );
+  } catch (err) {
+    console.warn('No se pudo sincronizar automáticamente las lecciones de Linux en Supabase:', err);
   }
 }
 
