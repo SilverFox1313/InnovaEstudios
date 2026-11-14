@@ -218,14 +218,35 @@ export default function RichLessonContent({ content }: RichLessonContentProps) {
             ? trimmed.slice(firstNewline + 1, -3).replace(/^\n+|\n+$/g, '')
             : trimmed.slice(3, -3).trim();
 
+          const codeLines = innerBody.split('\n');
+
           return (
-            <div key={idx} className="my-5 rounded-2xl overflow-hidden border border-slate-800 bg-slate-900 shadow-md">
-              <div className="px-4 py-2 bg-slate-950/80 border-b border-slate-800/80 flex items-center justify-between text-xs text-slate-400 font-mono">
-                <span>{headerLine || 'código'}</span>
-                <span className="w-2.5 h-2.5 rounded-full bg-indigo-500/80"></span>
+            <div key={idx} className="my-5 rounded-2xl overflow-hidden border border-slate-800 bg-slate-950 shadow-md">
+              <div className="px-4 py-2 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between text-xs text-slate-400 font-mono">
+                <span className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                  <span>{headerLine || 'terminal'}</span>
+                </span>
+                <span className="text-[11px] text-slate-500 uppercase tracking-widest font-semibold">Bash CLI</span>
               </div>
-              <pre className="p-4 text-xs sm:text-sm font-mono text-emerald-300 overflow-x-auto leading-relaxed">
-                <code>{innerBody}</code>
+              <pre className="p-4 text-xs sm:text-sm font-mono overflow-x-auto leading-relaxed">
+                <code>
+                  {codeLines.map((line, lIdx) => {
+                    const isCommand = line.includes('usuario@linux:~$') || line.trim().startsWith('$ ');
+                    const isComment = line.trim().startsWith('#');
+                    const lineClass = isCommand
+                      ? 'text-cyan-300 font-semibold block my-0.5'
+                      : isComment
+                        ? 'text-slate-500 italic block my-0.5'
+                        : 'text-emerald-300/90 block my-0.5';
+
+                    return (
+                      <span key={lIdx} className={lineClass}>
+                        {line}
+                      </span>
+                    );
+                  })}
+                </code>
               </pre>
             </div>
           );
