@@ -2,6 +2,8 @@ import 'dotenv/config';
 import express from 'express';
 import type { Request, Response } from 'express';
 import path from 'path';
+import fs from 'fs';
+import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 import { createClient } from '@supabase/supabase-js';
 import { createServer as createViteServer } from 'vite';
@@ -129,9 +131,140 @@ async function upsertPurchaseRecord(
   return error;
 }
 
+const STORAGE_BUCKET = 'course-images';
+const UPLOADS_DIR = path.resolve(__dirname, 'uploads');
+const ALLOWED_IMAGE_MIME_TYPES: Record<string, string> = {
+  'image/png': 'png',
+  'image/jpeg': 'jpg',
+  'image/jpg': 'jpg',
+  'image/webp': 'webp',
+  'image/gif': 'gif',
+  'image/svg+xml': 'svg',
+  'image/avif': 'avif',
+};
+
+async function isAdminSupabaseUser(user: any, userToken: string): Promise<boolean> {
+  if (!user?.id) return false;
+  if (user.app_metadata?.role === 'admin') return true;
+
+  const checkClient = SUPABASE_SERVICE_ROLE_KEY
+    ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+    : createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        global: { headers: { Authorization: `Bearer ${userToken}` } },
+      });
+
+  const { data: profile } = await checkClient
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .maybeSingle();
+
+  return profile?.role === 'admin';
+}
+
 async function startServer() {
   const app = express();
-  app.use(express.json());
+  app.use(express.json({ limit: '15mb' }));
+  await fs.promises.mkdir(UPLOADS_DIR, { recursive: true });
+  app.use('/uploads', express.static(UPLOADS_DIR));
+
+  // Admin image upload endpoint: uploads to Supabase Storage (auto-creating public bucket if service key present),
+  // with seamless local Express /uploads fallback so images render immediately without permission errors.
+  app.post('/api/uploads/image', async (req: Request, res: Response) => {
+    try {
+      const { user, token, error: authErr } = await authenticateSupabaseUser(req);
+      if (!user || !token) {
+        return res.status(401).json({ success: false, error: authErr || 'No autorizado.' });
+      }
+
+      const adminOk = await isAdminSupabaseUser(user, token);
+      if (!adminOk) {
+        return res.status(403).json({ success: false, error: 'Solo los administradores pueden subir imágenes.' });
+      }
+
+      const rawMime = typeof req.body?.mimeType === 'string' ? req.body.mimeType.trim().toLowerCase() : '';
+      const rawData = typeof req.body?.dataBase64 === 'string' ? req.body.dataBase64.trim() : '';
+      const rawFolder = req.body?.folder === 'lessons' ? 'lessons' : 'courses';
+      const rawFileName = typeof req.body?.fileName === 'string' ? req.body.fileName.trim() : 'imagen';
+
+      const ext = ALLOWED_IMAGE_MIME_TYPES[rawMime];
+      if (!ext) {
+        return res.status(400).json({
+          success: false,
+          error: 'Formato de imagen no compatible. Usa PNG, JPG, WEBP, GIF, SVG o AVIF.',
+        });
+      }
+
+      if (!rawData) {
+        return res.status(400).json({ success: false, error: 'El archivo de imagen está vacío.' });
+      }
+
+      const cleanBase64 = rawData.replace(/^data:[^;]+;base64,/, '');
+      const buffer = Buffer.from(cleanBase64, 'base64');
+
+      if (!buffer.length || buffer.length > 10 * 1024 * 1024) {
+        return res.status(400).json({
+          success: false,
+          error: 'La imagen debe pesar menos de 10 MB.',
+        });
+      }
+
+      const safeBaseName = path
+        .basename(rawFileName, path.extname(rawFileName))
+        .toLowerCase()
+        .replace(/[^a-z0-9-_]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 48) || 'imagen';
+
+      const uniqueName = `${Date.now()}-${crypto.randomBytes(4).toString('hex')}-${safeBaseName}.${ext}`;
+      const objectPath = `${rawFolder}/${uniqueName}`;
+
+      // 1. Try Supabase Storage first (auto-create public bucket if service role key is configured)
+      const { client: storageClient, isServiceRole } = getSupabaseWriteClient(token);
+      if (isServiceRole) {
+        const { data: bucketData, error: bucketErr } = await storageClient.storage.getBucket(STORAGE_BUCKET);
+        if (bucketErr || !bucketData) {
+          await storageClient.storage.createBucket(STORAGE_BUCKET, {
+            public: true,
+            fileSizeLimit: 10 * 1024 * 1024,
+          });
+        } else if (!bucketData.public) {
+          await storageClient.storage.updateBucket(STORAGE_BUCKET, { public: true });
+        }
+      }
+
+      const { error: uploadErr } = await storageClient.storage
+        .from(STORAGE_BUCKET)
+        .upload(objectPath, buffer, {
+          contentType: rawMime,
+          upsert: true,
+        });
+
+      if (!uploadErr) {
+        const { data: pub } = storageClient.storage.from(STORAGE_BUCKET).getPublicUrl(objectPath);
+        if (pub?.publicUrl) {
+          return res.json({ success: true, publicUrl: pub.publicUrl, storage: 'supabase' });
+        }
+      }
+
+      // 2. Reliable local server storage fallback (served publicly at /uploads/...)
+      const targetDir = path.join(UPLOADS_DIR, rawFolder);
+      await fs.promises.mkdir(targetDir, { recursive: true });
+      await fs.promises.writeFile(path.join(targetDir, uniqueName), buffer);
+
+      return res.json({
+        success: true,
+        publicUrl: `/uploads/${rawFolder}/${uniqueName}`,
+        storage: 'server',
+      });
+    } catch (err: any) {
+      console.error('Error en /api/uploads/image:', err);
+      return res.status(500).json({
+        success: false,
+        error: err?.message || 'Error interno al procesar la imagen.',
+      });
+    }
+  });
 
   // Server-side verification for paid courses via PayPal Orders v2 API
   app.post('/api/payments/verify-paypal', async (req: Request, res: Response) => {

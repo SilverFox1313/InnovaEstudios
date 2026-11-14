@@ -12,6 +12,7 @@ import {
   upsertCourseInSupabase,
   deleteCourseFromSupabase,
   upsertLessonInSupabase,
+  reorderLessonsInSupabase,
   fetchPurchasesFromSupabase,
   verifyPayPalPurchaseOnServer,
   enrollFreeCourseOnServer,
@@ -297,26 +298,28 @@ export default function App() {
   const handleAddLesson = async (courseId: string, newLesson: Lesson) => {
     const targetCourse = coursesList.find((c) => c.id === courseId);
     const orderIndex = targetCourse ? targetCourse.lessons.length : 0;
+    const lessonWithOrder: Lesson = { ...newLesson, orderIndex };
 
     const updated = coursesList.map((course) => {
       if (course.id === courseId) {
         return {
           ...course,
-          lessons: [...course.lessons, newLesson]
+          lessons: [...course.lessons, lessonWithOrder]
         };
       }
       return course;
     });
     setCoursesList(updated);
+    localStorage.setItem('courses_dynamic', JSON.stringify(updated));
 
     if (activeCourse && activeCourse.id === courseId) {
       setActiveCourse({
         ...activeCourse,
-        lessons: [...activeCourse.lessons, newLesson]
+        lessons: [...activeCourse.lessons, lessonWithOrder]
       });
     }
 
-    await upsertLessonInSupabase(courseId, newLesson, orderIndex, targetCourse);
+    await upsertLessonInSupabase(courseId, lessonWithOrder, orderIndex, targetCourse);
   };
 
   // 5. ADMIN: Delete Course directly from Supabase 'courses'
@@ -355,32 +358,81 @@ export default function App() {
     }
   };
 
-  // 7. ADMIN: Update Lesson directly in Supabase 'lessons'
+  // 7. ADMIN: Update Lesson directly in Supabase 'lessons' preserving exact position
   const handleUpdateLesson = async (courseId: string, updatedLesson: Lesson) => {
     const targetCourse = coursesList.find((c) => c.id === courseId);
+    const existingIndex = targetCourse
+      ? targetCourse.lessons.findIndex((lesson) => lesson.id === updatedLesson.id)
+      : -1;
+    const existingLesson = existingIndex >= 0 ? targetCourse?.lessons[existingIndex] : undefined;
+    const preservedOrderIndex =
+      typeof updatedLesson.orderIndex === 'number'
+        ? updatedLesson.orderIndex
+        : typeof existingLesson?.orderIndex === 'number'
+          ? existingLesson.orderIndex
+          : existingIndex >= 0
+            ? existingIndex
+            : 0;
+
+    const lessonWithOrder: Lesson = {
+      ...updatedLesson,
+      orderIndex: preservedOrderIndex
+    };
+
     const updated = coursesList.map((course) => {
       if (course.id === courseId) {
         return {
           ...course,
-          lessons: course.lessons.map((lesson) => 
-            lesson.id === updatedLesson.id ? updatedLesson : lesson
+          lessons: course.lessons.map((lesson) =>
+            lesson.id === updatedLesson.id ? lessonWithOrder : lesson
           )
         };
       }
       return course;
     });
     setCoursesList(updated);
+    localStorage.setItem('courses_dynamic', JSON.stringify(updated));
 
     if (activeCourse && activeCourse.id === courseId) {
       setActiveCourse({
         ...activeCourse,
-        lessons: activeCourse.lessons.map((lesson) => 
-          lesson.id === updatedLesson.id ? updatedLesson : lesson
+        lessons: activeCourse.lessons.map((lesson) =>
+          lesson.id === updatedLesson.id ? lessonWithOrder : lesson
         )
       });
     }
 
-    await upsertLessonInSupabase(courseId, updatedLesson, 0, targetCourse);
+    await upsertLessonInSupabase(courseId, lessonWithOrder, preservedOrderIndex, targetCourse);
+  };
+
+  // 7b. ADMIN: Reorder Lessons via Drag & Drop and persist order_index in Supabase
+  const handleReorderLessons = async (courseId: string, reorderedLessons: Lesson[]) => {
+    const targetCourse = coursesList.find((c) => c.id === courseId);
+    const normalizedLessons: Lesson[] = reorderedLessons.map((lesson, idx) => ({
+      ...lesson,
+      orderIndex: idx
+    }));
+
+    const updated = coursesList.map((course) => {
+      if (course.id === courseId) {
+        return {
+          ...course,
+          lessons: normalizedLessons
+        };
+      }
+      return course;
+    });
+    setCoursesList(updated);
+    localStorage.setItem('courses_dynamic', JSON.stringify(updated));
+
+    if (activeCourse && activeCourse.id === courseId) {
+      setActiveCourse({
+        ...activeCourse,
+        lessons: normalizedLessons
+      });
+    }
+
+    await reorderLessonsInSupabase(courseId, normalizedLessons, targetCourse);
   };
 
   // 8. ADMIN: Add or Update FAQ directly in Supabase 'course_faqs'
@@ -493,6 +545,7 @@ export default function App() {
             onDeleteCourse={handleDeleteCourse}
             onUpdateCourse={handleUpdateCourse}
             onUpdateLesson={handleUpdateLesson}
+            onReorderLessons={handleReorderLessons}
             onUpsertFaq={handleUpsertFaq}
             onDeleteFaq={handleDeleteFaq}
             onBackToCatalog={handleGoHome}

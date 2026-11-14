@@ -1,5 +1,6 @@
 import { supabase } from '../supabaseClient';
 import { Course, Lesson, CourseFaq } from '../types';
+import { DEFAULT_COURSE_IMAGE, normalizeImageUrl } from '../utils/imageUrl';
 
 export interface DbStatus {
   isLiveDb: boolean;
@@ -45,13 +46,22 @@ export function getDefaultFaqsForCourse(courseId: string, instructor: string = '
  */
 function mapRowToCourse(row: any, lessons: any[] = [], rawFaqs: any[] = []): Course {
   const mappedLessons: Lesson[] = (lessons || [])
-    .sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0))
-    .map((l: any) => ({
+    .slice()
+    .sort((a, b) => {
+      const orderDiff = (a.order_index ?? Number.MAX_SAFE_INTEGER) - (b.order_index ?? Number.MAX_SAFE_INTEGER);
+      if (orderDiff !== 0) return orderDiff;
+      const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
+      if (timeA !== timeB) return timeA - timeB;
+      return String(a.id).localeCompare(String(b.id));
+    })
+    .map((l: any, idx: number) => ({
       id: l.id,
       title: l.title,
       duration: l.duration || '10:00',
-      videoUrl: l.video_url || l.videoUrl || 'https://www.w3schools.com/html/mov_bbb.mp4',
-      content: l.content || ''
+      videoUrl: l.video_url ?? l.videoUrl ?? '',
+      content: l.content || '',
+      orderIndex: typeof l.order_index === 'number' ? l.order_index : idx
     }));
 
   let mappedFaqs: CourseFaq[] = [];
@@ -145,7 +155,7 @@ function mapRowToCourse(row: any, lessons: any[] = [], rawFaqs: any[] = []): Cou
     duration_hours: numericDurationHours,
     level: (row.level as 'Principiante' | 'Intermedio' | 'Avanzado') || 'Intermedio',
     publishedDate: row.published_date || row.publishedDate || '2026',
-    imageUrl: row.image_url || row.imageUrl || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&auto=format&fit=crop&q=80',
+    imageUrl: normalizeImageUrl(row.image_url || row.imageUrl, DEFAULT_COURSE_IMAGE),
     skillsLearned: Array.isArray(row.skills_learned) 
       ? row.skills_learned 
       : typeof row.skills_learned === 'string' 
@@ -190,7 +200,16 @@ export async function fetchCoursesFromSupabase(): Promise<{ courses: Course[]; i
       // Fallback to local storage cache only if available
       const local = localStorage.getItem('courses_dynamic');
       if (local) {
-        try { return { courses: JSON.parse(local), isLiveDb: false }; } catch (e) {}
+        try {
+          const parsedLocal: Course[] = JSON.parse(local);
+          return {
+            courses: parsedLocal.map((c) => ({
+              ...c,
+              imageUrl: normalizeImageUrl(c.imageUrl, DEFAULT_COURSE_IMAGE)
+            })),
+            isLiveDb: false
+          };
+        } catch (e) {}
       }
       return { courses: [], isLiveDb: false };
     }
@@ -314,7 +333,7 @@ export async function upsertCourseInSupabase(course: Course): Promise<{ success:
       duration_hours: numericDurationHours,
       level: course.level,
       published_date: course.publishedDate,
-      image_url: course.imageUrl,
+      image_url: normalizeImageUrl(course.imageUrl, DEFAULT_COURSE_IMAGE),
       skills_learned: course.skillsLearned,
       status: courseStatus,
       has_diploma: courseHasDiploma,
@@ -438,6 +457,42 @@ export async function upsertLessonInSupabase(
     return { success: true };
   } catch (err: any) {
     console.error('Error de red guardando lección en Supabase:', err);
+    return { success: false, error: err?.message };
+  }
+}
+
+/**
+ * 4b. LESSONS: Persist sequential order_index for all lessons in a course
+ */
+export async function reorderLessonsInSupabase(
+  courseId: string,
+  orderedLessons: Lesson[],
+  fallbackCourse?: Course
+): Promise<{ success: boolean; error?: string }> {
+  if (!courseId || orderedLessons.length === 0) return { success: true };
+
+  try {
+    await ensureCourseExists(courseId, fallbackCourse);
+
+    const results = await Promise.all(
+      orderedLessons.map((lesson, index) =>
+        supabase
+          .from('lessons')
+          .update({ order_index: index })
+          .eq('id', lesson.id)
+          .eq('course_id', courseId)
+      )
+    );
+
+    const failed = results.find((r) => r.error);
+    if (failed?.error) {
+      console.error('Error reordenando lecciones en Supabase:', failed.error);
+      return { success: false, error: failed.error.message };
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    console.error('Error de red reordenando lecciones en Supabase:', err);
     return { success: false, error: err?.message };
   }
 }

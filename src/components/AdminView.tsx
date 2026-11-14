@@ -1,9 +1,15 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Course, Lesson, CourseFaq } from '../types';
-import { Plus, BookOpen, Video, ArrowLeft, Image, DollarSign, Tag, Award, CheckCircle2, User, Sparkles, Trash2, Pencil, X, Database, Copy, Check, Eye, Edit3, FileText, HelpCircle, Clock, Star } from 'lucide-react';
+import { Plus, BookOpen, Video, ArrowLeft, Image, DollarSign, Tag, Award, CheckCircle2, User, Sparkles, Trash2, Pencil, X, Database, Copy, Check, Eye, Edit3, FileText, HelpCircle, Clock, Star, Bold, Italic, GripVertical, Upload, Loader2 } from 'lucide-react';
 import { verifyAdminAccess } from '../services/auth';
 import { getDbStatus } from '../services/db';
+import { uploadImageFile } from '../services/storage';
 import RichLessonContent from './RichLessonContent';
+import {
+  DEFAULT_COURSE_IMAGE,
+  handleImageLoadError,
+  normalizeImageUrl
+} from '../utils/imageUrl';
 
 interface AdminViewProps {
   isAdmin: boolean;
@@ -13,6 +19,7 @@ interface AdminViewProps {
   onDeleteCourse: (courseId: string) => void;
   onUpdateCourse: (updatedCourse: Course) => void;
   onUpdateLesson: (courseId: string, updatedLesson: Lesson) => void;
+  onReorderLessons: (courseId: string, reorderedLessons: Lesson[]) => void;
   onUpsertFaq: (courseId: string, faq: CourseFaq) => void;
   onDeleteFaq: (courseId: string, faqId: string) => void;
   onBackToCatalog: () => void;
@@ -26,6 +33,7 @@ export default function AdminView({
   onDeleteCourse,
   onUpdateCourse,
   onUpdateLesson,
+  onReorderLessons,
   onUpsertFaq,
   onDeleteFaq,
   onBackToCatalog
@@ -48,6 +56,9 @@ export default function AdminView({
   const courseFormRef = useRef<HTMLDivElement>(null);
   const lessonFormRef = useRef<HTMLDivElement>(null);
   const faqFormRef = useRef<HTMLDivElement>(null);
+  const lessonTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const courseImageInputRef = useRef<HTMLInputElement>(null);
+  const lessonImageInputRef = useRef<HTMLInputElement>(null);
 
   // Course form state
   const [editingCourseId, setEditingCourseId] = useState<string | null>(null);
@@ -61,6 +72,8 @@ export default function AdminView({
   const [duration, setDuration] = useState('12 horas');
   const [rating, setRating] = useState('4.9');
   const [imageUrl, setImageUrl] = useState('');
+  const [uploadingCourseImage, setUploadingCourseImage] = useState(false);
+  const [courseImageUploadError, setCourseImageUploadError] = useState('');
   const [status, setStatus] = useState<'published' | 'upcoming'>('published');
   const [hasDiploma, setHasDiploma] = useState<boolean>(true);
   const [courseFormSuccess, setCourseFormSuccess] = useState('');
@@ -87,10 +100,144 @@ export default function AdminView({
   const [lessonContent, setLessonContent] = useState('');
   const [lessonFormSuccess, setLessonFormSuccess] = useState('');
   const [lessonContentTab, setLessonContentTab] = useState<'write' | 'preview'>('write');
+  const [uploadingLessonImage, setUploadingLessonImage] = useState(false);
+  const [lessonImageUploadError, setLessonImageUploadError] = useState('');
+  const [draggedLessonIndex, setDraggedLessonIndex] = useState<number | null>(null);
+  const [dragOverLessonIndex, setDragOverLessonIndex] = useState<number | null>(null);
+
+  useEffect(() => {
+    setDraggedLessonIndex(null);
+    setDragOverLessonIndex(null);
+  }, [selectedCourseId]);
+
+  const handleCourseImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+
+    setUploadingCourseImage(true);
+    setCourseImageUploadError('');
+
+    const result = await uploadImageFile(file, 'courses');
+    setUploadingCourseImage(false);
+
+    if (!result.success || !result.publicUrl) {
+      setCourseImageUploadError(result.error || 'No se pudo subir la imagen seleccionada.');
+      return;
+    }
+
+    const uploadedUrl = result.publicUrl;
+    setImageUrl(uploadedUrl);
+
+    if (editingCourseId) {
+      const existing = courses.find((c) => c.id === editingCourseId);
+      if (existing) {
+        onUpdateCourse({
+          ...existing,
+          imageUrl: uploadedUrl
+        });
+      }
+    }
+
+    setCourseFormSuccess('¡Imagen subida correctamente y asignada a la portada del curso!');
+    setTimeout(() => setCourseFormSuccess(''), 4000);
+  };
+
+  const handleLessonImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+
+    setUploadingLessonImage(true);
+    setLessonImageUploadError('');
+
+    const result = await uploadImageFile(file, 'lessons');
+    setUploadingLessonImage(false);
+
+    if (!result.success || !result.publicUrl) {
+      setLessonImageUploadError(result.error || 'No se pudo subir la imagen seleccionada.');
+      return;
+    }
+
+    const altText = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]+/g, ' ').trim() || 'Imagen del capítulo';
+    const markdownImage = `![${altText}](${result.publicUrl})`;
+
+    const textarea = lessonTextareaRef.current;
+    let updatedContent = '';
+
+    if (textarea && lessonContentTab === 'write') {
+      const start = textarea.selectionStart ?? lessonContent.length;
+      const end = textarea.selectionEnd ?? lessonContent.length;
+      const before = lessonContent.slice(0, start);
+      const after = lessonContent.slice(end);
+      const prefix = before && !before.endsWith('\n') ? '\n\n' : '';
+      const suffix = after && !after.startsWith('\n') ? '\n\n' : '';
+      updatedContent = `${before}${prefix}${markdownImage}${suffix}${after}`;
+    } else {
+      updatedContent = lessonContent ? `${lessonContent}\n\n${markdownImage}` : markdownImage;
+    }
+
+    setLessonContent(updatedContent);
+    setLessonContentTab('write');
+
+    if (editingLessonId && selectedCourseId) {
+      const currentLessons = courses.find((c) => c.id === selectedCourseId)?.lessons || [];
+      const currentIdx = currentLessons.findIndex((les) => les.id === editingLessonId);
+      const currentLesson = currentIdx >= 0 ? currentLessons[currentIdx] : undefined;
+      if (currentLesson) {
+        const preservedOrderIndex =
+          typeof currentLesson.orderIndex === 'number'
+            ? currentLesson.orderIndex
+            : currentIdx >= 0
+              ? currentIdx
+              : 0;
+
+        onUpdateLesson(selectedCourseId, {
+          ...currentLesson,
+          title: lessonTitle.trim() || currentLesson.title,
+          duration: lessonDuration.trim() || currentLesson.duration,
+          videoUrl: lessonVideoUrl.trim(),
+          content: updatedContent,
+          orderIndex: preservedOrderIndex
+        });
+      }
+    }
+
+    setLessonFormSuccess('¡Imagen subida al almacenamiento e insertada en la lección!');
+    setTimeout(() => setLessonFormSuccess(''), 4000);
+  };
 
   const insertSnippet = (snippet: string) => {
     setLessonContent((prev) => (prev ? `${prev}\n\n${snippet}` : snippet));
     setLessonContentTab('write');
+  };
+
+  const applyInlineFormat = (marker: string, placeholder: string) => {
+    setLessonContentTab('write');
+    const textarea = lessonTextareaRef.current;
+
+    if (!textarea) {
+      setLessonContent((prev) => `${prev}${marker}${placeholder}${marker}`);
+      return;
+    }
+
+    const start = textarea.selectionStart ?? lessonContent.length;
+    const end = textarea.selectionEnd ?? lessonContent.length;
+    const selectedText = lessonContent.slice(start, end);
+    const innerText = selectedText || placeholder;
+    const formatted = `${marker}${innerText}${marker}`;
+    const updatedValue = lessonContent.slice(0, start) + formatted + lessonContent.slice(end);
+
+    setLessonContent(updatedValue);
+
+    requestAnimationFrame(() => {
+      const el = lessonTextareaRef.current;
+      if (!el) return;
+      el.focus();
+      const selectStart = start + marker.length;
+      const selectEnd = selectStart + innerText.length;
+      el.setSelectionRange(selectStart, selectEnd);
+    });
   };
 
   // FAQ form state
@@ -157,6 +304,8 @@ export default function AdminView({
     e.preventDefault();
     if (!title.trim() || !description.trim()) return;
 
+    setCourseImageUploadError('');
+
     const sanitizedCategory = category.trim() || 'General';
     const cleanDuration = duration.trim()
       ? (duration.toLowerCase().includes('hora') ? duration.trim() : `${duration.trim()} horas`)
@@ -168,6 +317,10 @@ export default function AdminView({
       // MODE: UPDATE
       const existing = courses.find((c) => c.id === editingCourseId);
       if (!existing) return;
+
+      const resolvedImageUrl = imageUrl.trim()
+        ? imageUrl.trim()
+        : normalizeImageUrl(existing.imageUrl, DEFAULT_COURSE_IMAGE);
 
       const updatedCourse: Course = {
         ...existing,
@@ -183,7 +336,7 @@ export default function AdminView({
         duration: cleanDuration,
         duration_hours: numericDurationHours,
         rating: Number(parsedRating.toFixed(1)),
-        imageUrl: imageUrl.trim() || existing.imageUrl || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&auto=format&fit=crop&q=80',
+        imageUrl: resolvedImageUrl,
       };
 
       onUpdateCourse(updatedCourse);
@@ -193,6 +346,7 @@ export default function AdminView({
       setDescription('');
       setLongDescription('');
       setImageUrl('');
+      setCourseImageUploadError('');
       setCategory('Programación');
       setPrice('39.99');
       setLevel('Intermedio');
@@ -219,7 +373,7 @@ export default function AdminView({
         status,
         hasDiploma,
         publishedDate: 'Reciente (Admin)',
-        imageUrl: imageUrl.trim() || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&auto=format&fit=crop&q=80',
+        imageUrl: imageUrl.trim() || DEFAULT_COURSE_IMAGE,
         skillsLearned: ['Competencias prácticas avanzadas', 'Manejo experto de herramientas'],
         lessons: []
       };
@@ -231,6 +385,7 @@ export default function AdminView({
       setDescription('');
       setLongDescription('');
       setImageUrl('');
+      setCourseImageUploadError('');
       setCategory('Programación');
       setPrice('39.99');
       setLevel('Intermedio');
@@ -257,7 +412,8 @@ export default function AdminView({
     setLevel(course.level || 'Intermedio');
     setDuration(course.duration && course.duration !== '0 horas' ? course.duration : '12 horas');
     setRating(String(course.rating || 4.9));
-    setImageUrl(course.imageUrl);
+    setImageUrl(normalizeImageUrl(course.imageUrl, ''));
+    setCourseImageUploadError('');
     setStatus(course.status || 'published');
     setHasDiploma(course.hasDiploma !== false);
 
@@ -278,6 +434,7 @@ export default function AdminView({
     setDescription('');
     setLongDescription('');
     setImageUrl('');
+    setCourseImageUploadError('');
     setCategory('Programación');
     setPrice('39.99');
     setLevel('Intermedio');
@@ -291,14 +448,26 @@ export default function AdminView({
     e.preventDefault();
     if (!selectedCourseId || !lessonTitle.trim()) return;
 
+    const currentCourseLessons = courses.find((c) => c.id === selectedCourseId)?.lessons || [];
+
     if (editingLessonId) {
-      // MODE: UPDATE LESSON
+      // MODE: UPDATE LESSON (preserving exact position / orderIndex)
+      const currentIdx = currentCourseLessons.findIndex((les) => les.id === editingLessonId);
+      const currentLesson = currentIdx >= 0 ? currentCourseLessons[currentIdx] : undefined;
+      const preservedOrderIndex =
+        typeof currentLesson?.orderIndex === 'number'
+          ? currentLesson.orderIndex
+          : currentIdx >= 0
+            ? currentIdx
+            : 0;
+
       const updatedLesson: Lesson = {
         id: editingLessonId,
         title: lessonTitle.trim(),
         duration: lessonDuration.trim(),
         videoUrl: lessonVideoUrl.trim(),
-        content: lessonContent.trim() || `Apuntes teóricos para la clase: ${lessonTitle}`
+        content: lessonContent.trim() || `Apuntes teóricos para la clase: ${lessonTitle}`,
+        orderIndex: preservedOrderIndex
       };
 
       onUpdateLesson(selectedCourseId, updatedLesson);
@@ -308,7 +477,7 @@ export default function AdminView({
       setLessonDuration('8 min lectura');
       setLessonContent('');
       setEditingLessonId(null);
-      setLessonFormSuccess('¡Capítulo/lección actualizado correctamente!');
+      setLessonFormSuccess('¡Capítulo/lección actualizado manteniendo su posición!');
     } else {
       // MODE: CREATE NEW LESSON
       const newLesson: Lesson = {
@@ -316,7 +485,8 @@ export default function AdminView({
         title: lessonTitle.trim(),
         duration: lessonDuration.trim() || '8 min lectura',
         videoUrl: lessonVideoUrl.trim(),
-        content: lessonContent.trim()
+        content: lessonContent.trim(),
+        orderIndex: currentCourseLessons.length
       };
 
       onAddLesson(selectedCourseId, newLesson);
@@ -638,16 +808,77 @@ export default function AdminView({
                 </div>
               </div>
 
-              <div>
-                <label htmlFor="course-image" className="block text-xs font-bold text-slate-700 dark:text-slate-300">URL Imagen de Portada</label>
+              <div className="space-y-2">
+                <label htmlFor="course-image" className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                  Imagen de Portada del Curso
+                </label>
+
                 <input
-                  id="course-image"
-                  type="url"
-                  value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                  placeholder="https://images.unsplash.com/photo-..."
-                  className="mt-1 block w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white bg-white dark:bg-slate-800 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 text-xs"
+                  ref={courseImageInputRef}
+                  id="course-image-file"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleCourseImageUpload}
+                  className="hidden"
                 />
+
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2.5">
+                  <button
+                    type="button"
+                    id="upload-course-image-btn"
+                    disabled={uploadingCourseImage}
+                    onClick={() => courseImageInputRef.current?.click()}
+                    className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white text-xs font-bold shadow-sm transition-all cursor-pointer shrink-0"
+                  >
+                    {uploadingCourseImage ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Upload className="w-4 h-4" />
+                    )}
+                    <span>{uploadingCourseImage ? 'Subiendo imagen...' : 'Subir imagen desde el dispositivo'}</span>
+                  </button>
+
+                  <input
+                    id="course-image"
+                    type="text"
+                    value={imageUrl}
+                    onChange={(e) => {
+                      setImageUrl(e.target.value);
+                      if (courseImageUploadError) setCourseImageUploadError('');
+                    }}
+                    placeholder="La URL pública se asignará automáticamente al subir..."
+                    className="block w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white bg-white dark:bg-slate-800 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 text-xs font-mono"
+                  />
+                </div>
+
+                {courseImageUploadError ? (
+                  <p className="text-[11px] text-red-600 dark:text-red-400 font-medium">
+                    {courseImageUploadError}
+                  </p>
+                ) : (
+                  <p className="text-[10px] text-slate-400 dark:text-slate-500">
+                    Formatos permitidos: PNG, JPG, WEBP, GIF o SVG (máx. 10 MB). Se aloja automáticamente y se asigna su URL pública.
+                  </p>
+                )}
+
+                {imageUrl.trim() && (
+                  <div className="mt-2 flex items-center gap-3 p-2 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+                    <img
+                      key={imageUrl.trim()}
+                      src={imageUrl.trim()}
+                      alt="Vista previa de portada"
+                      referrerPolicy="no-referrer"
+                      onError={(e) => handleImageLoadError(e, DEFAULT_COURSE_IMAGE)}
+                      className="w-16 h-10 rounded-md object-cover border border-slate-200 dark:border-slate-700 shrink-0 bg-slate-200 dark:bg-slate-700"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[10px] font-bold text-slate-700 dark:text-slate-300">Vista previa de portada</p>
+                      <p className="text-[10px] text-slate-400 dark:text-slate-500 truncate font-mono">
+                        {imageUrl.trim()}
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Selector de Estado: Publicado vs Próximamente */}
@@ -962,7 +1193,7 @@ export default function AdminView({
                   {/* Enhanced Content & Reading Editor with Formatting Toolbar & Preview */}
                   <div className="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden bg-white dark:bg-slate-900">
                     <div className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 px-3 py-2 flex flex-wrap items-center justify-between gap-2">
-                      <div className="flex items-center gap-1">
+                      <div className="flex flex-wrap items-center gap-1">
                         <span className="text-xs font-bold text-slate-700 dark:text-slate-300 mr-2 flex items-center gap-1">
                           <FileText className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                           <span>Contenido y Lectura</span>
@@ -971,11 +1202,46 @@ export default function AdminView({
                         {/* Quick formatting buttons */}
                         <button
                           type="button"
-                          onClick={() => insertSnippet('![Pie de foto de la imagen](https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=900&auto=format&fit=crop&q=80)')}
-                          className="px-2 py-1 text-[11px] bg-white dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-semibold rounded border border-slate-200 dark:border-slate-700 shadow-2xs transition-colors cursor-pointer"
-                          title="Insertar imagen con URL"
+                          id="format-bold-btn"
+                          onClick={() => applyInlineFormat('**', 'texto en negrita')}
+                          className="px-2 py-1 text-[11px] bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold rounded border border-slate-200 dark:border-slate-700 shadow-2xs transition-colors cursor-pointer inline-flex items-center gap-1"
+                          title="Negrita (**texto**)"
+                          aria-label="Insertar negrita"
                         >
-                          🖼️ Imagen
+                          <Bold className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          id="format-italic-btn"
+                          onClick={() => applyInlineFormat('*', 'texto en cursiva')}
+                          className="px-2 py-1 text-[11px] bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold rounded border border-slate-200 dark:border-slate-700 shadow-2xs transition-colors cursor-pointer inline-flex items-center gap-1"
+                          title="Cursiva (*texto*)"
+                          aria-label="Insertar cursiva"
+                        >
+                          <Italic className="w-3.5 h-3.5" />
+                        </button>
+                        <input
+                          ref={lessonImageInputRef}
+                          id="lesson-image-file"
+                          type="file"
+                          accept="image/*"
+                          onChange={handleLessonImageUpload}
+                          className="hidden"
+                        />
+                        <button
+                          type="button"
+                          id="upload-lesson-image-btn"
+                          disabled={uploadingLessonImage}
+                          onClick={() => lessonImageInputRef.current?.click()}
+                          className="px-2.5 py-1 text-[11px] bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-semibold rounded border border-blue-600 shadow-2xs transition-colors cursor-pointer inline-flex items-center gap-1.5"
+                          title="Subir imagen desde el dispositivo e insertarla en la lección"
+                        >
+                          {uploadingLessonImage ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          ) : (
+                            <Upload className="w-3 h-3" />
+                          )}
+                          <span>{uploadingLessonImage ? 'Subiendo...' : 'Subir imagen desde el dispositivo'}</span>
                         </button>
                         <button
                           type="button"
@@ -1040,8 +1306,15 @@ export default function AdminView({
                       </div>
                     </div>
 
+                    {lessonImageUploadError && (
+                      <div className="px-3 py-2 bg-red-50 dark:bg-red-950/50 border-b border-red-200 dark:border-red-800/60 text-red-600 dark:text-red-400 text-[11px] font-medium">
+                        {lessonImageUploadError}
+                      </div>
+                    )}
+
                     {lessonContentTab === 'write' ? (
                       <textarea
+                        ref={lessonTextareaRef}
                         id="lesson-notes-content"
                         rows={8}
                         value={lessonContent}
@@ -1078,45 +1351,106 @@ export default function AdminView({
                 </form>
               )}
 
-              {/* Course-Specific Lessons Lister & Quick Editor */}
-              {selectedCourseId && courses.length > 0 && (
-                <div className="pt-4 border-t border-slate-150 dark:border-slate-800 space-y-2">
-                  <p className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                    Clases registradas en este curso (Selecciona para Editar):
-                  </p>
-                  <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
-                    {courses.find((c) => c.id === selectedCourseId)?.lessons.map((les) => (
-                      <div
-                        key={les.id}
-                        className={`p-2 bg-slate-50 dark:bg-slate-800/60 hover:bg-indigo-50/40 dark:hover:bg-indigo-950/40 rounded-lg flex items-center justify-between text-xs border transition-all ${
-                          editingLessonId === les.id 
-                            ? 'border-indigo-300 dark:border-indigo-600 bg-indigo-50/30 dark:bg-indigo-950/50' 
-                            : 'border-slate-150 dark:border-slate-750'
-                        }`}
-                      >
-                        <div className="min-w-0 pr-2">
-                          <p className="font-bold text-slate-800 dark:text-slate-200 truncate">{les.title}</p>
-                          <p className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
-                            Duración: {les.duration} | Video: {les.videoUrl.slice(0, 45)}...
-                          </p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => handleStartEditLesson(les)}
-                          title="Seleccionar para editar clase"
-                          className="p-1 px-2 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-950/60 rounded-md transition-colors flex items-center gap-1 font-semibold text-[10px] cursor-pointer"
-                        >
-                          <Pencil className="w-3 h-3" />
-                          <span>Editar</span>
-                        </button>
-                      </div>
-                    ))}
-                    {(!courses.find((c) => c.id === selectedCourseId)?.lessons || courses.find((c) => c.id === selectedCourseId)?.lessons.length === 0) && (
-                      <p className="text-[11px] text-slate-400 dark:text-slate-500 italic">No hay clases asociadas a este curso académico.</p>
-                    )}
+              {/* Course-Specific Lessons Lister & Drag-and-Drop Order Manager */}
+              {selectedCourseId && courses.length > 0 && (() => {
+                const selectedCourseLessons = courses.find((c) => c.id === selectedCourseId)?.lessons || [];
+                return (
+                  <div className="pt-4 border-t border-slate-150 dark:border-slate-800 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                        Clases registradas en este curso (Arrastra para ordenar o selecciona para editar):
+                      </p>
+                      <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 shrink-0">
+                        {selectedCourseLessons.length} {selectedCourseLessons.length === 1 ? 'clase' : 'clases'}
+                      </span>
+                    </div>
+                    <div className="space-y-1.5 max-h-60 overflow-y-auto pr-1">
+                      {selectedCourseLessons.map((les, idx) => {
+                        const isDragging = draggedLessonIndex === idx;
+                        const isDragOver = dragOverLessonIndex === idx && draggedLessonIndex !== idx;
+                        return (
+                          <div
+                            key={les.id}
+                            draggable
+                            onDragStart={(e) => {
+                              setDraggedLessonIndex(idx);
+                              e.dataTransfer.effectAllowed = 'move';
+                              e.dataTransfer.setData('text/plain', les.id);
+                            }}
+                            onDragOver={(e) => {
+                              e.preventDefault();
+                              e.dataTransfer.dropEffect = 'move';
+                              if (dragOverLessonIndex !== idx) {
+                                setDragOverLessonIndex(idx);
+                              }
+                            }}
+                            onDragLeave={() => {
+                              if (dragOverLessonIndex === idx) {
+                                setDragOverLessonIndex(null);
+                              }
+                            }}
+                            onDrop={(e) => {
+                              e.preventDefault();
+                              if (draggedLessonIndex === null || draggedLessonIndex === idx) {
+                                setDraggedLessonIndex(null);
+                                setDragOverLessonIndex(null);
+                                return;
+                              }
+                              const reordered = [...selectedCourseLessons];
+                              const [movedItem] = reordered.splice(draggedLessonIndex, 1);
+                              reordered.splice(idx, 0, movedItem);
+                              setDraggedLessonIndex(null);
+                              setDragOverLessonIndex(null);
+                              onReorderLessons(selectedCourseId, reordered);
+                              setLessonFormSuccess('¡Orden de capítulos actualizado y sincronizado!');
+                              setTimeout(() => setLessonFormSuccess(''), 3000);
+                            }}
+                            onDragEnd={() => {
+                              setDraggedLessonIndex(null);
+                              setDragOverLessonIndex(null);
+                            }}
+                            className={`p-2 rounded-lg flex items-center justify-between text-xs border transition-all cursor-grab active:cursor-grabbing select-none ${
+                              isDragOver
+                                ? 'border-indigo-500 dark:border-indigo-400 ring-2 ring-indigo-500/20 bg-indigo-50/70 dark:bg-indigo-950/60'
+                                : editingLessonId === les.id
+                                  ? 'border-indigo-300 dark:border-indigo-600 bg-indigo-50/30 dark:bg-indigo-950/50'
+                                  : 'bg-slate-50 dark:bg-slate-800/60 hover:bg-indigo-50/40 dark:hover:bg-indigo-950/40 border-slate-150 dark:border-slate-750'
+                            } ${isDragging ? 'opacity-45' : ''}`}
+                          >
+                            <div className="flex items-center gap-2 min-w-0 pr-2">
+                              <GripVertical className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 shrink-0" />
+                              <span className="w-5 h-5 rounded-md bg-slate-200/80 dark:bg-slate-700/80 text-slate-700 dark:text-slate-200 font-bold text-[10px] flex items-center justify-center shrink-0">
+                                {idx + 1}
+                              </span>
+                              <div className="min-w-0">
+                                <p className="font-bold text-slate-800 dark:text-slate-200 truncate">{les.title}</p>
+                                <p className="text-[10px] text-slate-400 dark:text-slate-500 font-mono truncate">
+                                  Duración: {les.duration} | {les.videoUrl ? `Video: ${les.videoUrl.slice(0, 35)}...` : 'Lectura'}
+                                </p>
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleStartEditLesson(les);
+                              }}
+                              title="Seleccionar para editar clase"
+                              className="p-1 px-2 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-950/60 rounded-md transition-colors flex items-center gap-1 font-semibold text-[10px] cursor-pointer shrink-0"
+                            >
+                              <Pencil className="w-3 h-3" />
+                              <span>Editar</span>
+                            </button>
+                          </div>
+                        );
+                      })}
+                      {selectedCourseLessons.length === 0 && (
+                        <p className="text-[11px] text-slate-400 dark:text-slate-500 italic">No hay clases asociadas a este curso académico.</p>
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
             </div>
 
             {/* Panel 3: Manage Course Frequently Asked Questions (FAQs) */}

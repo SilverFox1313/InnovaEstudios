@@ -102,9 +102,15 @@ export default function CourseViewer({
     } else {
       setSavedNotes([]);
     }
-    // Set first lesson active when course changes
+    // Preserve currently active lesson if still present in course; otherwise select first lesson
     if (course.lessons.length > 0) {
-      setActiveLesson(course.lessons[0]);
+      setActiveLesson((prev) => {
+        if (prev) {
+          const updatedMatch = course.lessons.find((l) => l.id === prev.id);
+          if (updatedMatch) return updatedMatch;
+        }
+        return course.lessons[0];
+      });
     }
   }, [course, notesStorageKey]);
 

@@ -3,6 +3,7 @@ import { Course } from '../types';
 import { Search, Star, BookOpen, Clock, BarChart, CheckCircle2, User, HelpCircle, ArrowRight, X, Sparkles, AlertCircle, ShoppingBag } from 'lucide-react';
 import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
 import CourseCard, { DEFAULT_COURSE_IMAGE } from './CourseCard';
+import { normalizeImageUrl, handleImageLoadError } from '../utils/imageUrl';
 
 const PAYPAL_CLIENT_ID = (import.meta as any).env?.VITE_PAYPAL_CLIENT_ID || 'test';
 
@@ -281,14 +282,10 @@ export default function CatalogView({
                   </span>
                 </div>
                 <img
-                  src={selectedCourse.imageUrl}
+                  key={selectedCourse.id}
+                  src={normalizeImageUrl(selectedCourse.imageUrl, DEFAULT_COURSE_IMAGE)}
                   alt={selectedCourse.title}
-                  onError={(e) => {
-                    const target = e.currentTarget;
-                    if (target.src !== DEFAULT_COURSE_IMAGE) {
-                      target.src = DEFAULT_COURSE_IMAGE;
-                    }
-                  }}
+                  onError={(e) => handleImageLoadError(e, DEFAULT_COURSE_IMAGE)}
                   className="w-full h-full object-cover opacity-60 relative z-1"
                   referrerPolicy="no-referrer"
                 />

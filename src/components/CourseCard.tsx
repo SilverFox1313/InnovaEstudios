@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Clock, Star, Sparkles, CheckCircle2, ArrowRight, BookOpen } from 'lucide-react';
 import { Course } from '../types';
+import { DEFAULT_COURSE_IMAGE, normalizeImageUrl } from '../utils/imageUrl';
 
-export const DEFAULT_COURSE_IMAGE = 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&auto=format&fit=crop&q=80';
+export { DEFAULT_COURSE_IMAGE };
 
 interface CourseCardProps {
   key?: React.Key;
@@ -20,8 +21,14 @@ export default function CourseCard({
   onOpenDetails,
   onStartPurchase
 }: CourseCardProps) {
+  const normalizedCourseImage = normalizeImageUrl(course.imageUrl, DEFAULT_COURSE_IMAGE);
   const [imageError, setImageError] = useState(false);
-  const [imgSrc, setImgSrc] = useState(course.imageUrl || DEFAULT_COURSE_IMAGE);
+  const [imgSrc, setImgSrc] = useState(normalizedCourseImage);
+
+  useEffect(() => {
+    setImageError(false);
+    setImgSrc(normalizedCourseImage);
+  }, [normalizedCourseImage]);
 
   const isFree = course.price === 0;
   const isUpcoming = course.status === 'upcoming';

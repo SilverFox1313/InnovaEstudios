@@ -4,6 +4,7 @@ export interface Lesson {
   duration: string;
   videoUrl: string;
   content: string; // Brief lesson notes
+  orderIndex?: number;
 }
 
 export interface CourseFaq {

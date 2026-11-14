@@ -380,6 +380,34 @@ CREATE POLICY "user_notes_owner_all" ON public.user_notes
   );
 
 -- ==============================================================================
+-- H) SUPABASE STORAGE: BUCKET PÚBLICO DE IMÁGENES (course-images)
+-- ==============================================================================
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('course-images', 'course-images', true)
+ON CONFLICT (id) DO UPDATE SET public = true;
+
+DROP POLICY IF EXISTS "course_images_public_read" ON storage.objects;
+CREATE POLICY "course_images_public_read" ON storage.objects
+  FOR SELECT
+  USING (bucket_id = 'course-images');
+
+DROP POLICY IF EXISTS "course_images_admin_insert" ON storage.objects;
+CREATE POLICY "course_images_admin_insert" ON storage.objects
+  FOR INSERT
+  WITH CHECK (bucket_id = 'course-images' AND public.is_admin());
+
+DROP POLICY IF EXISTS "course_images_admin_update" ON storage.objects;
+CREATE POLICY "course_images_admin_update" ON storage.objects
+  FOR UPDATE
+  USING (bucket_id = 'course-images' AND public.is_admin())
+  WITH CHECK (bucket_id = 'course-images' AND public.is_admin());
+
+DROP POLICY IF EXISTS "course_images_admin_delete" ON storage.objects;
+CREATE POLICY "course_images_admin_delete" ON storage.objects
+  FOR DELETE
+  USING (bucket_id = 'course-images' AND public.is_admin());
+
+-- ==============================================================================
 -- ASIGNAR ROL DE ADMINISTRADOR
 -- ==============================================================================
 update public.profiles set role = 'admin' where email = 'hildevert13@gmail.com';

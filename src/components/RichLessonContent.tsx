@@ -1,5 +1,11 @@
 import React from 'react';
-import { BookOpen, Info, ExternalLink, Image as ImageIcon } from 'lucide-react';
+import { BookOpen, Info, Image as ImageIcon } from 'lucide-react';
+import {
+  DEFAULT_COURSE_IMAGE,
+  extractGoogleDriveFileId,
+  handleImageLoadError,
+  normalizeImageUrl
+} from '../utils/imageUrl';
 
 interface RichLessonContentProps {
   content: string;
@@ -27,17 +33,16 @@ export default function RichLessonContent({ content }: RichLessonContentProps) {
         const imgMatch = trimmed.match(/^!\[(.*?)\]\((.*?)\)$/);
         if (imgMatch) {
           const altText = imgMatch[1];
-          const imgUrl = imgMatch[2];
+          const imgUrl = normalizeImageUrl(imgMatch[2], DEFAULT_COURSE_IMAGE);
           return (
             <figure key={idx} className="my-6 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 shadow-sm transition-all hover:shadow-md">
               <img
                 src={imgUrl}
                 alt={altText || 'Imagen del capítulo'}
                 loading="lazy"
+                referrerPolicy="no-referrer"
                 className="w-full max-h-[520px] object-contain bg-slate-900/5 dark:bg-black/20 mx-auto"
-                onError={(e) => {
-                  (e.target as HTMLElement).style.display = 'none';
-                }}
+                onError={(e) => handleImageLoadError(e, DEFAULT_COURSE_IMAGE)}
               />
               {altText && (
                 <figcaption className="p-3 text-center text-xs text-slate-500 dark:text-slate-400 italic bg-white dark:bg-slate-800/90 border-t border-slate-100 dark:border-slate-700 flex items-center justify-center gap-1.5">
@@ -49,15 +54,21 @@ export default function RichLessonContent({ content }: RichLessonContentProps) {
           );
         }
 
-        // 2. Direct standalone image URL: http(s)://...(.png|.jpg|.jpeg|.webp|.gif|.svg)
-        if (/^https?:\/\/.*\.(png|jpg|jpeg|webp|gif|svg)(\?.*)?$/i.test(trimmed)) {
+        // 2. Direct standalone image URL (http(s) or /uploads/) or Google Drive image link
+        if (
+          /^(https?:\/\/|\/uploads\/).*\.(png|jpg|jpeg|webp|gif|svg|avif)(\?.*)?$/i.test(trimmed) ||
+          Boolean(extractGoogleDriveFileId(trimmed))
+        ) {
+          const directUrl = normalizeImageUrl(trimmed, DEFAULT_COURSE_IMAGE);
           return (
             <figure key={idx} className="my-6 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 shadow-sm">
               <img
-                src={trimmed}
+                src={directUrl}
                 alt="Imagen de referencia"
                 loading="lazy"
+                referrerPolicy="no-referrer"
                 className="w-full max-h-[520px] object-contain bg-slate-900/5 dark:bg-black/20 mx-auto"
+                onError={(e) => handleImageLoadError(e, DEFAULT_COURSE_IMAGE)}
               />
             </figure>
           );
